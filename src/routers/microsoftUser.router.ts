@@ -6,7 +6,7 @@ import { Rollbar } from "../helpers/Rollbar";
 const router = express.Router();
 
 // Get a specific user detail
-router.get("/:userId", (req: Request, res: Response) => {
+router.get("/", (req: Request, res: Response) => {
   try {
     const { userId } = req.query;
 
