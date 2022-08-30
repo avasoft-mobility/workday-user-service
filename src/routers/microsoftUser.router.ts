@@ -11,7 +11,7 @@ import {
 const router = express.Router();
 
 // Get a specific user detail
-router.get("/", (req: Request, res: Response) => {
+router.get("/getUserById", (req: Request, res: Response) => {
   try {
     const { userId } = req.query;
 
@@ -29,6 +29,7 @@ router.get("/", (req: Request, res: Response) => {
   }
 });
 
+// clone Reportings
 router.get("/clone-reportings", async (req: Request, res: Response) => {
   try {
     const authorisedCloneReportingUsers: string[] = [
