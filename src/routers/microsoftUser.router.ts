@@ -6,7 +6,19 @@ import { Rollbar } from "../helpers/Rollbar";
 const router = express.Router();
 
 router.get("/check", (req, res) => {
-  return res.send("Users service is working fine");
+  return res.send({ message: "Users Service is working fine" });
+});
+
+router.get("/todos", (req, res) => {
+  return res.send({ message: "Todo Service is working fine" });
+});
+
+router.get("/mobile", (req, res) => {
+  return res.send({ message: "Mobile Service is working fine" });
+});
+
+router.post("/attendance", (req, res) => {
+  return res.send({ message: "Attendance Service is working fine" });
 });
 
 // Get a specific user detail
