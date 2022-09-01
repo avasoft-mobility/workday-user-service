@@ -2,13 +2,12 @@ import express, { Request, Response } from "express";
 import microsoftUser from "../schema/microsoftUserSchema";
 import leaderShip from "../schema/leaderShipSchema";
 import { Rollbar } from "../helpers/Rollbar";
-import ErrorResponse from "../models/ErrorResponse.model";
-import {
-  graphReportingsValidation,
-  exceptionalValidation,
-} from "../services/microsoftUserService";
 
 const router = express.Router();
+
+router.get("/check", (req, res) => {
+  return res.send("Users service is working fine");
+});
 
 // Get a specific user detail
 router.get("/users/:userId", (req: Request, res: Response) => {

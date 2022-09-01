@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node-dev src/index.ts"
+    "start": "ts-node-dev src/app.ts",
+    "build": "tsc -p tsconfig.json && cp -r ./node_modules dist/src/"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +17,7 @@
     "express": "^4.18.1",
     "mongoose": "^6.5.3",
     "rollbar": "^2.25.1",
+    "serverless-http": "^3.0.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^4.8.2"
   }
