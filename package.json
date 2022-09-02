@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "ts-node-dev src/app.ts",
-    "build": "tsc -p tsconfig.json && cp -r ./node_modules dist/src/"
+    "build": "tsc -p tsconfig.json && cp -r ./node_modules dist/src/",
+    "build:win": "tsc -p tsconfig.json && COPY ./node_modules dist/src/"
   },
   "keywords": [],
   "author": "",
