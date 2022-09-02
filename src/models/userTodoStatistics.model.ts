@@ -1,5 +1,5 @@
-import TeamStat from "./teamStats";
-import MyStat from "./myStats";
+import TeamStat from "./teamStats.model";
+import MyStat from "./myStats.model";
 
 interface UserTodoStatistics {
   teamStatistics: TeamStat;
