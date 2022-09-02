@@ -15,6 +15,7 @@ functions:
       - http:
           path: /users
           method: ANY
+          cors: true
       - http:
           path: /users/{proxy+}
           method: ANY
