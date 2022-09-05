@@ -72,12 +72,13 @@ class LambdaClient {
       queryParams: queryParams ? queryParams : {},
       isBase64Encoded: false,
     };
-    return this.lambda
+    const response = this.lambda
       .invoke({
         Payload: JSON.stringify(Payload),
         FunctionName: this.FunctionName,
       })
       .promise();
+    return JSON.parse(response.Payload);
   };
 
   post = (route: string, queryParams?: Object, body?: Object) => {
@@ -90,12 +91,13 @@ class LambdaClient {
       body: body ? body : {},
     };
 
-    return this.lambda
+    const response = this.lambda
       .invoke({
         Payload: JSON.stringify(Payload),
         FunctionName: this.FunctionName,
       })
       .promise();
+    return JSON.parse(response.Payload);
   };
 
   put = (route: string, queryParams?: Object, body?: Object) => {
@@ -108,12 +110,13 @@ class LambdaClient {
       body: body ? body : {},
     };
 
-    return this.lambda
+    const response = this.lambda
       .invoke({
         Payload: JSON.stringify(Payload),
         FunctionName: this.FunctionName,
       })
       .promise();
+    return JSON.parse(response.Payload);
   };
 
   delete = (route: string, queryParams?: Object, body?: Object) => {
@@ -126,12 +129,13 @@ class LambdaClient {
       body: body ? body : {},
     };
 
-    return this.lambda
+    const response = this.lambda
       .invoke({
         Payload: JSON.stringify(Payload),
         FunctionName: this.FunctionName,
       })
       .promise();
+    return JSON.parse(response.Payload);
   };
 }
 

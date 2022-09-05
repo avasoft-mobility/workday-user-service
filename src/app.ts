@@ -11,7 +11,7 @@ runMiddleware(app);
 
 app.use(json());
 
-mongoose.connect("mongodb://localhost:27017/test");
+mongoose.connect(process.env.DB_STRING!);
 mongoose.connection.on("error", (err) => {
   console.log("err", err);
 });
