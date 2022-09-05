@@ -33,7 +33,7 @@ router.get("/:userId", async (req: Request, res: Response) => {
     const { userId } = req.params;
 
     if (userId === null || userId === "" || userId === undefined) {
-      res.status(400).json({ message: "userId is required" });
+      res.status(400).send({ message: "userId is required" });
       return;
     }
 
@@ -41,14 +41,14 @@ router.get("/:userId", async (req: Request, res: Response) => {
     if (!result) {
       return res
         .status(400)
-        .json({ message: "User for the given userId was not found" });
+        .send({ message: "User for the given userId was not found" });
     }
     if (result) {
-      return res.status(200).json({ data: result });
+      return res.status(200).send(result);
     }
   } catch (error) {
     Rollbar.error(error as unknown as Error, req);
-    res.status(500).json({ message: (error as unknown as Error).message });
+    res.status(500).send({ message: (error as unknown as Error).message });
   }
 });
 
@@ -69,17 +69,17 @@ router.get(
       const { userId } = req.params;
 
       if (!userId) {
-        res.status(400).json({ message: "UserId doesn't exist" });
+        res.status(400).send({ message: "UserId doesn't exist" });
       }
       if (!fromUserId) {
-        res.status(400).json({ message: "fromUserId doesn't exist" });
+        res.status(400).send({ message: "fromUserId doesn't exist" });
       }
       if (!toUserId) {
-        res.status(400).json({ message: "touserId doesn't exist" });
+        res.status(400).send({ message: "touserId doesn't exist" });
       }
       if (userId) {
         if (!authorisedCloneReportingUsers.includes(userId.toString())) {
-          res.status(401).json({ message: "Unauthorised userId" });
+          res.status(401).send({ message: "Unauthorised userId" });
         }
       }
 
@@ -94,7 +94,7 @@ router.get(
       var toUserIdResult: any = await microsoftUser.findOne(toUserIdQuery);
 
       if (fromUserIdDResult.reportings.length <= 1) {
-        res.status(400).json({
+        res.status(400).send({
           message: "Reportings was not exists for the given fromUserId",
         });
       }
@@ -116,9 +116,9 @@ router.get(
           reportings: finalReportings,
         }
       );
-      return res.status(200).json({ response: response });
+      return res.status(200).send(response);
     } catch (error) {
-      res.status(500).json({ message: error });
+      res.status(500).send({ message: error });
     }
   }
 );
@@ -131,14 +131,14 @@ router.get("/:userId/statistics", (req: Request, res: Response) => {
       req.params["userid"] === "" ||
       req.params["userid"] === undefined
     ) {
-      res.status(400).json({ message: "userid is required" });
+      res.status(400).send({ message: "userid is required" });
       return;
     }
     const result = getStats(req.params["userid"]);
-    return res.status(200).json({ data: result });
+    return res.status(200).send(result);
   } catch (error) {
     Rollbar.error(error as unknown as Error, req);
-    res.status(500).json({ message: (error as unknown as Error).message });
+    res.status(500).send({ message: (error as unknown as Error).message });
   }
 });
 
