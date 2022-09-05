@@ -64,7 +64,7 @@ class LambdaClient {
     return `TodosFunction`;
   };
 
-  get = (route: string, queryParams?: Object) => {
+  get = async (route: string, queryParams?: Object) => {
     const Payload = {
       httpMethod: "GET",
       path: route,
@@ -72,7 +72,7 @@ class LambdaClient {
       queryParams: queryParams ? queryParams : {},
       isBase64Encoded: false,
     };
-    const response = this.lambda
+    const response = await this.lambda
       .invoke({
         Payload: JSON.stringify(Payload),
         FunctionName: this.FunctionName,
@@ -81,7 +81,7 @@ class LambdaClient {
     return JSON.parse(response.Payload);
   };
 
-  post = (route: string, queryParams?: Object, body?: Object) => {
+  post = async (route: string, queryParams?: Object, body?: Object) => {
     const Payload = {
       httpMethod: "POST",
       path: route,
@@ -91,7 +91,7 @@ class LambdaClient {
       body: body ? body : {},
     };
 
-    const response = this.lambda
+    const response = await this.lambda
       .invoke({
         Payload: JSON.stringify(Payload),
         FunctionName: this.FunctionName,
@@ -100,7 +100,7 @@ class LambdaClient {
     return JSON.parse(response.Payload);
   };
 
-  put = (route: string, queryParams?: Object, body?: Object) => {
+  put = async (route: string, queryParams?: Object, body?: Object) => {
     const Payload = {
       httpMethod: "PUT",
       path: route,
@@ -110,7 +110,7 @@ class LambdaClient {
       body: body ? body : {},
     };
 
-    const response = this.lambda
+    const response = await this.lambda
       .invoke({
         Payload: JSON.stringify(Payload),
         FunctionName: this.FunctionName,
@@ -119,7 +119,7 @@ class LambdaClient {
     return JSON.parse(response.Payload);
   };
 
-  delete = (route: string, queryParams?: Object, body?: Object) => {
+  delete = async (route: string, queryParams?: Object, body?: Object) => {
     const Payload = {
       httpMethod: "DELETE",
       path: route,
@@ -129,7 +129,7 @@ class LambdaClient {
       body: body ? body : {},
     };
 
-    const response = this.lambda
+    const response = await this.lambda
       .invoke({
         Payload: JSON.stringify(Payload),
         FunctionName: this.FunctionName,
