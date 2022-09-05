@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import MicrosoftUser from "../models/microsoftUser.model";
 
 const microsoftUser = new mongoose.Schema({
   userId: {
@@ -29,4 +30,4 @@ const microsoftUser = new mongoose.Schema({
 });
 
 // collection name
-export default mongoose.model("microsoftusers", microsoftUser);
+export default mongoose.model<MicrosoftUser>("microsoftusers", microsoftUser);

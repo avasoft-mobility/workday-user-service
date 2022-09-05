@@ -52,6 +52,31 @@ router.get("/:userId", async (req: Request, res: Response) => {
   }
 });
 
+// Get a specific user detail
+router.get("/:userId/managers", async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+
+    if (userId === null || userId === "" || userId === undefined) {
+      res.status(400).send({ message: "userId is required" });
+      return;
+    }
+
+    const result = await getUserById(userId.toString());
+    if (!result) {
+      return res
+        .status(400)
+        .send({ message: "User for the given userId was not found" });
+    }
+
+    const managers = await getManagerOfUser(userId.toString());
+    return res.status(200).send(managers);
+  } catch (error) {
+    Rollbar.error(error as unknown as Error, req);
+    res.status(500).send({ message: (error as unknown as Error).message });
+  }
+});
+
 // clone Reportings
 router.get(
   "/users/:userId/clone-reportings",
@@ -297,15 +322,27 @@ const getMyCurrentWorkingHours = async (userId: string): Promise<number> => {
 };
 
 // function to get a sepcific user detail
-async function getUserById(id: String) {
-  try {
-    var queryResult = await microsoftUser.findOne({
-      userId: id,
-    });
-    return queryResult;
-  } catch (error: any) {
-    return { message: error.message };
-  }
+async function getUserById(id: String): Promise<MicrosoftUser | null> {
+  var queryResult = await microsoftUser.findOne({
+    userId: id,
+  });
+  return queryResult;
+}
+
+async function getManagerOfUser(id: String): Promise<MicrosoftUser[]> {
+  const managers = await microsoftUser.find({
+    $and: [
+      {
+        reportings: {
+          $elemMatch: { $eq: id },
+        },
+      },
+      {
+        userId: { $nin: [id] },
+      },
+    ],
+  });
+  return managers;
 }
 
 const getPreviousWeekWorkingHours = async (userId: string): Promise<string> => {
