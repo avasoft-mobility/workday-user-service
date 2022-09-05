@@ -8,6 +8,8 @@ import Todo from "../models/todo.model";
 import MyStats from "../models/myStats.model";
 import TeamStats from "../models/teamStats.model";
 import MicrosoftUser from "../models/microsoftUser.model";
+import AttendanceModel from "../models/Attendance.model";
+import { getMyTeamReport } from "../services/microsoftUser.service";
 
 const router = express.Router();
 
@@ -321,6 +323,23 @@ const getMyCurrentWorkingHours = async (userId: string): Promise<number> => {
   return totalAta;
 };
 
+router.get("/:userId/my-team", async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.userId;
+    const response = await getMyTeamReport(userId as string);
+
+    if (response.code !== 200) {
+      return res
+        .status(response.code)
+        .json({ code: response.code, message: response.message });
+    }
+
+    return res.status(response.code).json(response.body);
+  } catch (error) {
+    Rollbar.error(error as unknown as Error, req);
+    res.status(500).json({ message: (error as unknown as Error).message });
+  }
+});
 // function to get a sepcific user detail
 async function getUserById(id: String): Promise<MicrosoftUser | null> {
   var queryResult = await microsoftUser.findOne({
