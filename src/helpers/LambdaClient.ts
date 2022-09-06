@@ -71,7 +71,9 @@ class LambdaClient {
       const Payload = {
         httpMethod: "GET",
         path: route,
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+        },
         queryParams: queryParams ? queryParams : {},
         isBase64Encoded: false,
       };

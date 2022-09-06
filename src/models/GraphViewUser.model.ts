@@ -1,5 +1,5 @@
 import AttendanceModel from "./Attendance.model";
-import Todo from "./Todos.model";
+import { Todo } from "./Todos.model";
 
 interface GraphViewUser {
   _id: string;

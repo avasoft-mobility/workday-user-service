@@ -4,7 +4,7 @@ import leaderShip from "../schema/leaderShipSchema";
 import { Rollbar } from "../helpers/Rollbar";
 import moment from "moment";
 import UserTodoStatistics from "../models/userTodoStatistics.model";
-import Todo from "../models/Todos.model";
+import { Todo } from "../models/Todos.model";
 import MyStats from "../models/myStats.model";
 import TeamStats from "../models/teamStats.model";
 import MicrosoftUser from "../models/microsoftUser.model";
@@ -214,7 +214,7 @@ router.get(
         authorizationResponse.user,
         targetUserId
       );
-      
+
       res.status(validationResponse.code).json(response);
     } catch (error) {
       Rollbar.error(error as unknown as Error, req);
@@ -222,7 +222,6 @@ router.get(
     }
   }
 );
-
 
 // function to get stats of user
 async function getStats(userId: string): Promise<UserTodoStatistics> {

@@ -1,10 +1,10 @@
-import Cipherer from "../helpers/Cipherer";
+import moment from "moment";
 import LambdaClient from "../helpers/LambdaClient";
 import Attendance from "../models/Attendance.model";
 import ErrorResponse from "../models/ErrorResponse.model";
 import GraphViewUser from "../models/GraphViewUser.model";
 import Tag from "../models/Tag.model";
-import Todo from "../models/Todos.model";
+import { Todo, TodoWithTagId } from "../models/Todos.model";
 
 import MicrosoftUser from "../schema/microsoftUserSchema";
 
@@ -30,11 +30,7 @@ const getGraphViewData = async (
   let matchingReports = await getMatchingReports(targetUserId);
 
   const lambdaClient = new LambdaClient("Todos");
-  const defaultTags = (await lambdaClient.get(`todos/private/common-tags`, {
-    header: {
-      key: "CF43D31C5DCD2094D72EAC3B257D5949",
-    },
-  })) as Tag[];
+  const defaultTags = (await lambdaClient.get(`/tags/private/common`)) as Tag[];
 
   response = processMatchingReports(matchingReports, targetUser!, loggedInUser);
 
@@ -146,23 +142,28 @@ const getUserTodos = async (
 ): Promise<Todo[]> => {
   let userTodos: Todo[] = [];
   const lambdaClient = new LambdaClient("Todos");
-  const response = (await lambdaClient.get(
-    `todos?userId=${userId}&date=${new Date()}`
-  )) as Todo[];
+  const response = (await lambdaClient.get(`/todos`, {
+    userId: userId,
+    date: moment().format("YYYY-MM-DD"),
+  })) as TodoWithTagId[];
+
+  if (!response) {
+    return [];
+  }
 
   for (const todo of response) {
     var todoItem: Todo = {
       _id: todo.microsoftUserId,
       userId: todo.userId,
       microsoftUserId: todo.microsoftUserId,
-      title: Cipherer.decrypt(todo.title),
-      comments: todo.comments ? Cipherer.decrypt(todo.comments) : "",
+      title: todo.title,
+      comments: todo.comments,
       status: todo.status,
       type: todo.type,
       eta: todo.eta,
       ata: todo.ata,
       date: todo.date,
-      tags: fetchTodoDefaultTags(todo.tags ? [] : [], defaultTags),
+      tags: fetchTodoDefaultTags(todo.tags ? todo.tags : [], defaultTags),
       __v: todo.__v,
     };
     userTodos.push(todoItem);
@@ -173,11 +174,18 @@ const getUserTodos = async (
   return userTodos;
 };
 
-const getUserAttendance = async (userId: string): Promise<Attendance> => {
+const getUserAttendance = async (
+  userId: string
+): Promise<Attendance | undefined> => {
   const lambdaClient = new LambdaClient("Attendance");
-  const userAttendance = (await lambdaClient.get(
-    `/attendance?userId=${userId}&date=${new Date()}`
-  )) as Attendance;
+  const userAttendance = (await lambdaClient.get(`/attendance`, {
+    userId: userId,
+    date: moment().format("YYYY-MM-DD"),
+  })) as Attendance;
+
+  if (!userAttendance) {
+    return undefined;
+  }
 
   return userAttendance;
 };
@@ -191,6 +199,7 @@ const fetchTodoDefaultTags = (tags: string[], defaultTags: Tag[]): Tag[] => {
     if (!defaultTag) {
       continue;
     }
+
     result.push(defaultTag);
   }
 
