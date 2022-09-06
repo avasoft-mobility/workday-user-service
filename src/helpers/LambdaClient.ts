@@ -65,77 +65,94 @@ class LambdaClient {
   };
 
   get = async (route: string, queryParams?: Object) => {
-    const Payload = {
-      httpMethod: "GET",
-      path: route,
-      headers: { "content-type": "application/json" },
-      queryParams: queryParams ? queryParams : {},
-      isBase64Encoded: false,
-    };
-    const response = await this.lambda
-      .invoke({
-        Payload: JSON.stringify(Payload),
-        FunctionName: this.FunctionName,
-      })
-      .promise();
-    return JSON.parse(response.Payload);
+    try {
+      const Payload = {
+        httpMethod: "GET",
+        path: route,
+        headers: { "content-type": "application/json" },
+        queryParams: queryParams ? queryParams : {},
+        isBase64Encoded: false,
+      };
+      const response = await this.lambda
+        .invoke({
+          Payload: JSON.stringify(Payload),
+          FunctionName: this.FunctionName,
+        })
+        .promise();
+      return JSON.parse(response.Payload);
+    } catch (error) {
+      return null;
+    }
   };
 
   post = async (route: string, queryParams?: Object, body?: Object) => {
-    const Payload = {
-      httpMethod: "POST",
-      path: route,
-      headers: { "content-type": "application/json" },
-      queryParams: queryParams ? queryParams : {},
-      isBase64Encoded: false,
-      body: body ? body : {},
-    };
+    try {
+      const Payload = {
+        httpMethod: "POST",
+        path: route,
+        headers: { "content-type": "application/json" },
+        queryParams: queryParams ? queryParams : {},
+        isBase64Encoded: false,
+        body: body ? body : {},
+      };
 
-    const response = await this.lambda
-      .invoke({
-        Payload: JSON.stringify(Payload),
-        FunctionName: this.FunctionName,
-      })
-      .promise();
-    return JSON.parse(response.Payload);
+      const response = await this.lambda
+        .invoke({
+          Payload: JSON.stringify(Payload),
+          FunctionName: this.FunctionName,
+        })
+        .promise();
+      return JSON.parse(response.Payload);
+    } catch (error) {
+      return null;
+    }
   };
 
   put = async (route: string, queryParams?: Object, body?: Object) => {
-    const Payload = {
-      httpMethod: "PUT",
-      path: route,
-      headers: { "content-type": "application/json" },
-      queryParams: queryParams ? queryParams : {},
-      isBase64Encoded: false,
-      body: body ? body : {},
-    };
+    try {
+      const Payload = {
+        httpMethod: "PUT",
+        path: route,
+        headers: { "content-type": "application/json" },
+        queryParams: queryParams ? queryParams : {},
+        isBase64Encoded: false,
+        body: body ? body : {},
+      };
 
-    const response = await this.lambda
-      .invoke({
-        Payload: JSON.stringify(Payload),
-        FunctionName: this.FunctionName,
-      })
-      .promise();
-    return JSON.parse(response.Payload);
+      const response = await this.lambda
+        .invoke({
+          Payload: JSON.stringify(Payload),
+          FunctionName: this.FunctionName,
+        })
+        .promise();
+      return JSON.parse(response.Payload);
+    } catch (error) {
+      return null;
+    }
   };
 
   delete = async (route: string, queryParams?: Object, body?: Object) => {
-    const Payload = {
-      httpMethod: "DELETE",
-      path: route,
-      headers: { "content-type": "application/json" },
-      queryParams: queryParams ? queryParams : {},
-      isBase64Encoded: false,
-      body: body ? body : {},
-    };
+    try {
+      const Payload = {
+        httpMethod: "DELETE",
+        path: route,
+        headers: { "content-type": "application/json" },
+        queryParams: queryParams ? queryParams : {},
+        isBase64Encoded: false,
+        body: body ? body : {},
+      };
 
-    const response = await this.lambda
-      .invoke({
-        Payload: JSON.stringify(Payload),
-        FunctionName: this.FunctionName,
-      })
-      .promise();
-    return JSON.parse(response.Payload);
+      const response = await this.lambda
+        .invoke({
+          Payload: JSON.stringify(Payload),
+          FunctionName: this.FunctionName,
+        })
+        .promise();
+
+      return JSON.parse(response.Payload);
+    } catch (error) {
+      return null;
+    }
   };
 }
 
