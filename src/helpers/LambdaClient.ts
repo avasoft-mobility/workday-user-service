@@ -41,27 +41,29 @@ class LambdaClient {
   };
 
   private getFunctionName = (service: Services): string => {
+    const functionNames = JSON.parse(process.env.LAMBDA_FUNCTION_NAMES!);
+
     if (service === "Mobile") {
-      return `MobileFunction`;
+      return functionNames.MOBILE;
     }
 
     if (service === "Attendance") {
-      return `AttendancesFunction`;
+      return functionNames.ATTENDANCE;
     }
 
     if (service === "Reports") {
-      return `ReportsFunction`;
+      return functionNames.REPORTS;
     }
 
     if (service === "Todos") {
-      return `TodosFunction`;
+      return functionNames.TODOS;
     }
 
     if (service === "Users") {
-      return `UsersFunction`;
+      return functionNames.USERS;
     }
 
-    return `TodosFunction`;
+    return functionNames.TODOS;
   };
 
   get = async (route: string, queryParams?: Object) => {
