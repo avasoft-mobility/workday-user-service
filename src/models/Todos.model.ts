@@ -1,4 +1,4 @@
-import Tag from "./Tag.model";
+import Tag from "./tag.model";
 
 interface Todo {
   _id: string;
