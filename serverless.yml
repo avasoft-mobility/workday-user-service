@@ -1,0 +1,21 @@
+service: AVA-HIVE-NP-WORKDAY-USERS-BE
+provider:
+  name: aws
+  runtime: nodejs16.x
+  stage: dev
+  region: us-east-2
+  memorySize: 128
+  apiGateway:
+    restApiId: wqefm8ssja
+    restApiRootResourceId: fp8vr4aezh
+functions:
+  app:
+    handler: src/app.lambdaHandler
+    events:
+      - http:
+          path: /users
+          method: ANY
+      - http:
+          path: /users/{proxy+}
+          method: ANY
+          cors: true
