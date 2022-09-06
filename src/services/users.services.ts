@@ -4,7 +4,7 @@ import Attendance from "../models/Attendance.model";
 import ErrorResponse from "../models/ErrorResponse.model";
 import GraphViewUser from "../models/GraphViewUser.model";
 import Tag from "../models/Tag.model";
-import Todo from "../models/Todo.model";
+import Todo from "../models/Todos.model";
 
 import MicrosoftUser from "../schema/microsoftUserSchema";
 
