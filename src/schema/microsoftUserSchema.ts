@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import MicrosoftUser from "../models/microsoftUser.model";
 
-const microsoftUser = new mongoose.Schema({
+const microsoftUsers = new mongoose.Schema({
   userId: {
     type: String,
   },
@@ -17,6 +17,9 @@ const microsoftUser = new mongoose.Schema({
   mail: {
     type: String,
   },
+  employeeId: {
+    type: String,
+  },
   reportings: {
     type: [String],
   },
@@ -30,4 +33,4 @@ const microsoftUser = new mongoose.Schema({
 });
 
 // collection name
-export default mongoose.model<MicrosoftUser>("microsoftusers", microsoftUser);
+export default mongoose.model<MicrosoftUser>("microsoftusers", microsoftUsers);

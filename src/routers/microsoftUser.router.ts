@@ -4,11 +4,16 @@ import leaderShip from "../schema/leaderShipSchema";
 import { Rollbar } from "../helpers/Rollbar";
 import moment from "moment";
 import UserTodoStatistics from "../models/userTodoStatistics.model";
-import Todo from "../models/todo.model";
+import Todo from "../models/Todo.model";
 import MyStats from "../models/myStats.model";
 import TeamStats from "../models/teamStats.model";
 import MicrosoftUser from "../models/microsoftUser.model";
 import { getMyTeamReport } from "../services/microsoftUser.service";
+import {
+  graphReportingsValidation,
+  exceptionalValidation,
+  getGraphViewData,
+} from "../services/users.services";
 import LambdaClient from "../helpers/LambdaClient";
 import Attendance from "../models/Attendance.model";
 
@@ -170,6 +175,54 @@ router.get("/:userId/statistics", async (req: Request, res: Response) => {
     res.status(500).send({ message: (error as unknown as Error).message });
   }
 });
+
+router.get(
+  "/:userId/graph-reportings/:targetUserId",
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.params.userId as string;
+      const targetUserId = req.params.targetUserId as string;
+
+      const validationResponse = graphReportingsValidation(
+        userId,
+        targetUserId
+      );
+
+      if (validationResponse?.code === 400) {
+        return res
+          .status(validationResponse.code)
+          .json({ message: validationResponse.message });
+      }
+
+      const loggedInUser = await microsoftUser.findOne({
+        userId: userId,
+      });
+
+      if (!loggedInUser) {
+        return res.status(404).send({ message: "user not found" });
+      }
+
+      const authorizationResponse = exceptionalValidation(loggedInUser);
+
+      if (!authorizationResponse.hasAccess) {
+        return res.status(authorizationResponse.code).json({
+          message: "Access Denied",
+        });
+      }
+
+      const response = await getGraphViewData(
+        authorizationResponse.user,
+        targetUserId
+      );
+      
+      res.status(validationResponse.code).json(response);
+    } catch (error) {
+      Rollbar.error(error as unknown as Error, req);
+      res.status(500).json({ message: (error as unknown as Error).message });
+    }
+  }
+);
+
 
 // function to get stats of user
 async function getStats(userId: string): Promise<UserTodoStatistics> {

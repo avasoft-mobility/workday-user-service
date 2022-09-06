@@ -4,12 +4,14 @@ import * as path from "path";
 import { json } from "body-parser";
 import serverless from "serverless-http";
 import runMiddleware from "run-middleware";
-
+import dotenv from "dotenv";
 import { microsoftUserRouter } from "./routers/microsoftUser.router";
 const app = express();
 runMiddleware(app);
 
 app.use(json());
+
+dotenv.config();
 
 mongoose.connect(process.env.DB_STRING!);
 mongoose.connection.on("error", (err) => {
