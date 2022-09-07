@@ -5,6 +5,7 @@ import { json } from "body-parser";
 import serverless from "serverless-http";
 import runMiddleware from "run-middleware";
 import dotenv from "dotenv";
+import cors from "cors"
 import { microsoftUserRouter } from "./routers/microsoftUser.router";
 const app = express();
 runMiddleware(app);
@@ -12,6 +13,12 @@ runMiddleware(app);
 app.use(json());
 
 dotenv.config();
+
+app.use(
+  cors({
+    origin: "*",
+  })
+);
 
 mongoose.connect(process.env.DB_STRING!);
 mongoose.connection.on("error", (err) => {
