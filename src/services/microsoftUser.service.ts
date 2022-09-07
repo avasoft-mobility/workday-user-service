@@ -32,13 +32,21 @@ const getMyTeamReport = async (userId: string): Promise<Response> => {
     currentUser.reportings
   );
 
-  console.log("reportingsAttendance", reportingsAttendance);
+  if (reportingsAttendance) {
+    reportingUsers = mapUsersWithAttendance(
+      reportingsDetail,
+      reportingsAttendance
+    );
 
-  reportingUsers = mapUsersWithAttendance(
-    reportingsDetail,
-    reportingsAttendance
-  );
-  reportingUsers = mapUsersWithReporterName(reportingUsers, currentUser);
+    reportingUsers = mapUsersWithReporterName(reportingUsers, currentUser);
+  }
+
+  if (!reportingsAttendance) {
+    reportingUsers = mapUsersWithReporterName(
+      reportingsAttendance,
+      currentUser
+    );
+  }
 
   return { code: 200, message: "success", body: reportingUsers };
 };
