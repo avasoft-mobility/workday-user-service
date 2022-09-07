@@ -1,3 +1,4 @@
+import moment from "moment";
 import LambdaClient from "../helpers/LambdaClient";
 import AttendanceModel from "../models/Attendance.model";
 import TeamReport from "../models/TeamReport.model";
@@ -84,7 +85,7 @@ const getMicrosoftUsersAttendance = async (
     `https://wqefm8ssja.execute-api.us-east-2.amazonaws.com/dev/attendance/bulk-retrieve`,
     {
       userIds: usersId,
-      date: new Date(new Date().setHours(0, 0, 0, 0)).toISOString(),
+      date: moment(new Date()).add(1).format("YYYY-MM-DD"),
     }
   );
 
