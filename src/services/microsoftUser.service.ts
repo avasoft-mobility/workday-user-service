@@ -2,6 +2,7 @@ import LambdaClient from "../helpers/LambdaClient";
 import AttendanceModel from "../models/Attendance.model";
 import TeamReport from "../models/TeamReport.model";
 import microsoftUsersSchema from "../schema/microsoftUserSchema";
+const axios = require("axios");
 
 interface Response {
   code: number;
@@ -26,6 +27,7 @@ const getMyTeamReport = async (userId: string): Promise<Response> => {
   );
 
   let reportingsDetail = await getMultipleMicrosoftUser(currentUser.reportings);
+
   let reportingsAttendance = await getMicrosoftUsersAttendance(
     currentUser.reportings
   );
@@ -63,15 +65,25 @@ const getMultipleMicrosoftUser = async (
 const getMicrosoftUsersAttendance = async (
   usersId: string[]
 ): Promise<AttendanceModel[]> => {
-  const lambdaClient = new LambdaClient("Attendance");
-  const usersAttendance = await lambdaClient.post(
-    `/attendance/bulk-retrieve`,
-    undefined,
+  // const lambdaClient = new LambdaClient("Attendance");
+  // const usersAttendance = await lambdaClient.post(
+  //   `/attendance/bulk-retrieve`,
+  //   undefined,
+  //   {
+  //     userIds: usersId,
+  //     date: moment(new Date()).add(1).format("YYYY-MM-DD"),
+  //   }
+  // );
+
+  const axiosResponse = await axios.post(
+    `https://wqefm8ssja.execute-api.us-east-2.amazonaws.com/dev/attendance/bulk-retrieve`,
     {
       userIds: usersId,
       date: new Date(new Date().setHours(0, 0, 0, 0)).toISOString(),
     }
   );
+
+  const usersAttendance = axiosResponse.data;
   return usersAttendance;
 };
 
