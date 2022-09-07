@@ -42,10 +42,7 @@ const getMyTeamReport = async (userId: string): Promise<Response> => {
   }
 
   if (!reportingsAttendance) {
-    reportingUsers = mapUsersWithReporterName(
-      reportingsAttendance,
-      currentUser
-    );
+    reportingUsers = mapUsersWithReporterName(reportingsDetail, currentUser);
   }
 
   return { code: 200, message: "success", body: reportingUsers };
