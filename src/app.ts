@@ -31,8 +31,9 @@ mongoose.connection.on("connected", (err, res) => {
 
 app.use("/users", microsoftUserRouter);
 
+const functionNames = JSON.parse(process.env.LAMBDA_FUNCTION_NAMES!);
 app.use(
-  "/users/*/functions/UsersFunction/invocations",
+  `/users/*/functions/${functionNames.USERS}/invocations`,
   (req: Request, res: Response) => {
     const payload = JSON.parse(Buffer.from(req.body).toString());
     (app as any).runMiddleware(
