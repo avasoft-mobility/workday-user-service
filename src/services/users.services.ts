@@ -181,6 +181,7 @@ const getUserAttendance = async (
   const userAttendance = (await lambdaClient.get(`/attendance`, {
     userId: userId,
     date: moment().format("YYYY-MM-DD"),
+    object: "true",
   })) as Attendance;
 
   if (!userAttendance) {
