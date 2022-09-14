@@ -16,6 +16,8 @@ import {
 } from "../services/users.services";
 import LambdaClient from "../helpers/LambdaClient";
 import Attendance from "../models/Attendance.model";
+import TodoStats from "../models/Todo-Stats.model";
+import AttendanceStats from "../models/Attendance-Stats.model";
 
 const router = express.Router();
 
@@ -238,9 +240,44 @@ async function getStats(userId: string): Promise<UserTodoStatistics> {
       },
       date: "-1",
     };
-    result.myStatistics = await getMyStatistics(userId);
-    result.teamStatistics = await getTeamStatistics(userId);
-    result.date = getDateForStats().toString();
+    const interestedDate = getDateForStats();
+    const [fromDate, toDate] = getPreviousWeekDateRange();
+    const user = await microsoftUser.findOne({ userId: userId });
+
+    if (!user) {
+      return result;
+    }
+
+    const statsTodos = await getTodosForStats(
+      userId,
+      moment(interestedDate).format("YYYY-MM-DD"),
+      moment(fromDate).format("YYYY-MM-DD"),
+      moment(toDate).format("YYYY-MM-DD"),
+      user.reportings
+    );
+
+    const statsAttendance = await getAttendanceForStats(
+      userId,
+      moment(interestedDate).format("YYYY-MM-DD"),
+      moment(fromDate).format("YYYY-MM-DD"),
+      moment(toDate).format("YYYY-MM-DD"),
+      user.reportings
+    );
+
+    console.log("statsTodos", statsTodos);
+    console.log("statsAttendance", statsAttendance);
+
+    result.myStatistics = await getMyStatistics(
+      userId,
+      statsTodos,
+      statsAttendance
+    );
+    result.teamStatistics = await getTeamStatistics(
+      user,
+      statsTodos,
+      statsAttendance
+    );
+    result.date = interestedDate.toString();
 
     return result;
   } catch (err) {
@@ -262,61 +299,106 @@ async function getStats(userId: string): Promise<UserTodoStatistics> {
   }
 }
 
-const getMyStatistics = async (userId: string): Promise<MyStats> => {
+const getTodosForStats = async (
+  userId: string,
+  interestedDate: string,
+  fromDate: string,
+  toDate: string,
+  reportings: string[]
+): Promise<TodoStats> => {
+  const lambdaClient = new LambdaClient("Todos");
+  const response = (await lambdaClient.post(
+    "/todos/stats",
+    {
+      userId: userId,
+    },
+    {
+      interestedDate: interestedDate,
+      startDate: fromDate,
+      endDate: toDate,
+      reportings: reportings,
+    }
+  )) as TodoStats;
+  return response;
+};
+
+const getAttendanceForStats = async (
+  userId: string,
+  interestedDate: string,
+  fromDate: string,
+  toDate: string,
+  reportings: string[]
+): Promise<AttendanceStats> => {
+  const lambdaClient = new LambdaClient("Attendance");
+  const response = (await lambdaClient.post(
+    "/attendance/stats",
+    {
+      userId: userId,
+    },
+    {
+      interestedDate: interestedDate,
+      startDate: fromDate,
+      endDate: toDate,
+      reportings: reportings,
+    }
+  )) as AttendanceStats;
+  return response;
+};
+
+const getMyStatistics = async (
+  userId: string,
+  statsTodos: TodoStats,
+  statsAttendance: AttendanceStats
+): Promise<MyStats> => {
   const result: MyStats = {
     myCurrentwrkgHrs: -1,
     myPreWekWrkngHrs: "-1",
   };
-  result.myCurrentwrkgHrs = await getMyCurrentWorkingHours(userId);
-  result.myPreWekWrkngHrs = await getPreviousWeekWorkingHours(userId);
+  result.myCurrentwrkgHrs = await getMyCurrentWorkingHours(
+    statsTodos,
+    statsAttendance
+  );
+  result.myPreWekWrkngHrs = await getPreviousWeekWorkingHours(
+    statsTodos,
+    statsAttendance
+  );
 
   return result;
 };
 
-const getTeamStatistics = async (userId: string): Promise<TeamStats> => {
+const getTeamStatistics = async (
+  user: MicrosoftUser,
+  statsTodos: TodoStats,
+  statsAttendance: AttendanceStats
+): Promise<TeamStats> => {
   const result: TeamStats = {
     totalReporters: -1,
     totalWorkingAta: -1,
     avgWorkingAta: "",
   };
-  result.totalReporters = await getTeamTotalReportes(userId);
-  result.totalWorkingAta = await getTeamTotalWorkingHours(userId);
-  result.avgWorkingAta = await getTeamAverageWorkingHours(
-    result.totalWorkingAta,
-    userId
-  );
+
+  result.totalReporters = await getTeamTotalReportes(user);
+
+  const [totalWorkingHours, averageWorkingHours] =
+    await getTeamTotalWorkingHours(user, statsTodos, statsAttendance);
+
+  result.totalWorkingAta = totalWorkingHours;
+  result.avgWorkingAta = averageWorkingHours;
 
   return result;
 };
 
-const getMyCurrentWorkingHours = async (userId: string): Promise<number> => {
+const getMyCurrentWorkingHours = async (
+  statsTodos: TodoStats,
+  statsAttendance: AttendanceStats
+): Promise<number> => {
   let totalAta = 0;
 
-  let intrestedDate = getDateForStats();
-
-  var query = {
-    date: moment(intrestedDate).format("YYYY-MM-DD"),
-    userId: userId,
-  };
-
-  console.log(
-    "moment(intrestedDate).format()",
-    moment(intrestedDate).format("YYYY-MM-DD")
-  );
-
-  const todoLambdaClient = new LambdaClient("Todos");
-  const todos = (await todoLambdaClient.get(`/todos`, query)) as Todo[];
-
-  console.log("intrestedDate.toISOString()", intrestedDate.toISOString());
-
-  const attendanceLambdaClient = new LambdaClient("Attendance");
-  const attendance = (await attendanceLambdaClient.get(`/attendance`, {
-    object: "true",
-    date: intrestedDate.toISOString(),
-    userId: userId,
-  })) as Attendance;
-
-  console.log(attendance);
+  const todos = statsTodos.interestedDateTodo;
+  const attendance =
+    statsAttendance.interestedDateAttendance.length > 0
+      ? statsAttendance.interestedDateAttendance[0]
+      : null;
 
   if (!attendance) {
     return 0;
@@ -376,33 +458,12 @@ async function getManagerOfUser(id: String): Promise<MicrosoftUser[]> {
   return managers;
 }
 
-const getPreviousWeekWorkingHours = async (userId: string): Promise<string> => {
-  let fromDate = moment().subtract(1, "weeks").startOf("week").toDate();
-  let toDate = moment().subtract(1, "weeks").endOf("week").toDate();
-
-  console.log("fromDate", fromDate);
-  console.log("toDate", toDate);
-
-  const todoLambdaClient = new LambdaClient("Todos");
-  const todos = (await todoLambdaClient.get(`/todos`, {
-    startDate: moment(new Date(fromDate.setHours(0, 0, 0, 0))).format(
-      "YYYY-MM-DD"
-    ),
-    endDate: moment(new Date(toDate.setHours(0, 0, 0, 0))).format("YYYY-MM-DD"),
-    userId: userId,
-  })) as Todo[];
-
-  console.log("Previous week todos", todos);
-
-  const attendanceLambdaClient = new LambdaClient("Attendance");
-  const attendances = (await attendanceLambdaClient.get(`/attendance`, {
-    fromDate: moment(new Date(fromDate.setHours(0, 0, 0, 0))).format(
-      "YYYY-MM-DD"
-    ),
-    toDate: moment(new Date(toDate.setHours(0, 0, 0, 0))).format("YYYY-MM-DD"),
-    userId: userId,
-    object: "true",
-  })) as Attendance[];
+const getPreviousWeekWorkingHours = async (
+  statsTodos: TodoStats,
+  statsAttendance: AttendanceStats
+): Promise<string> => {
+  const todos = statsTodos.dateIntervalTodos;
+  const attendances = statsAttendance.dateIntervalAttendances;
 
   console.log("attendances", attendances);
 
@@ -432,34 +493,29 @@ const getPreviousWeekWorkingHours = async (userId: string): Promise<string> => {
   return (totalAta / presentAttendance.length).toFixed(2);
 };
 
-const getTeamTotalReportes = async (userId: string): Promise<number> => {
-  const queryResult = (await microsoftUser.findOne({
-    userId: userId,
-  })) as MicrosoftUser;
+const getTeamTotalReportes = async (user: MicrosoftUser): Promise<number> => {
   var result: number;
-  result =
-    queryResult.reportings.length <= 1 ? 0 : queryResult.reportings.length - 1;
+  result = user.reportings.length <= 1 ? 0 : user.reportings.length - 1;
   return result;
 };
 
-const getTeamTotalWorkingHours = async (userId: string): Promise<number> => {
+const getTeamTotalWorkingHours = async (
+  user: MicrosoftUser,
+  statsTodos: TodoStats,
+  statsAttendance: AttendanceStats
+): Promise<[number, string]> => {
   let totalAta = 0;
-  const queryResult: any = await microsoftUser.findOne({
-    userId: userId,
-  });
+  let totalUsers = 0;
 
-  let intrestedDate = getDateForStats();
+  if (user.reportings.length > 1) {
+    const reportings = user.reportings.filter((x) => x !== user.userId);
+    console.log(reportings);
 
-  if (queryResult.reportings.length > 1) {
-    const reportings = queryResult.reportings.remove(userId);
     for (const iterator of reportings) {
-      const attendanceLambdaClient = new LambdaClient("Attendance");
-      const userAttendance = (await attendanceLambdaClient.get(`/attendance`, {
-        date: new Date(intrestedDate.setHours(0, 0, 0, 0)).toISOString(),
-        userId: iterator,
-        object: "true",
-      })) as Attendance;
-
+      const userAttendance =
+        statsAttendance.reportingInterestedDateAttendances.find(
+          (x) => x.microsoftUserID === iterator
+        );
       if (!userAttendance) {
         continue;
       }
@@ -472,57 +528,31 @@ const getTeamTotalWorkingHours = async (userId: string): Promise<number> => {
         continue;
       }
 
-      const todoLambdaClient = new LambdaClient("Todos");
-      const todos = (await todoLambdaClient.get(`/todos`, {
-        userId: iterator,
-        date: new Date(intrestedDate.setHours(0, 0, 0, 0)).toISOString(),
-      })) as Todo[];
+      totalUsers++;
 
+      const todos = statsTodos.reportingsInterestedDateTodos.filter(
+        (x) => x.microsoftUserId === iterator
+      );
       todos.forEach((element: Todo) => {
         totalAta = totalAta + element.ata;
       });
     }
   }
-  return totalAta;
-};
 
-const getTeamAverageWorkingHours = async (
-  totalWorkingHours: number,
-  userId: String
-): Promise<string> => {
-  let intrestedDate = getDateForStats();
-
-  var totalUsers = 0;
-  const queryForReportings = (await microsoftUser.findOne({
-    userId: userId,
-  })) as MicrosoftUser;
-  for await (const iterator of queryForReportings.reportings) {
-    if (iterator !== userId) {
-      const attendanceLambdaClient = new LambdaClient("Attendance");
-      const userAttendance = (await attendanceLambdaClient.get(`/attendance`, {
-        date: new Date(intrestedDate.setHours(0, 0, 0, 0)).toISOString(),
-        userId: iterator,
-        object: "true",
-      })) as Attendance;
-
-      if (
-        userAttendance &&
-        !userAttendance.attendance_status.includes("Leave") &&
-        !(userAttendance.attendance_status === "Comp Off")
-      ) {
-        totalUsers++;
-      }
-    }
-  }
-  if (totalUsers == 0) {
-    return "0";
+  if (totalUsers === 0) {
+    return [totalAta, "0"];
   }
 
-  const average = totalWorkingHours / totalUsers;
+  const average = totalAta / totalUsers;
+
+  console.log("totalAta", totalAta);
+  console.log("totalUsers", totalUsers);
+
   if (average > 0) {
-    average.toFixed(1);
+    return [totalAta, average.toFixed(1)];
   }
-  return average.toFixed(2);
+
+  return [totalAta, average.toFixed(2)];
 };
 
 const getDateForStats = (): Date => {
@@ -541,5 +571,11 @@ const getDateForStats = (): Date => {
   }
 
   return intrestedDate;
+};
+
+const getPreviousWeekDateRange = (): Date[] => {
+  let fromDate = moment().subtract(1, "weeks").startOf("week").toDate();
+  let toDate = moment().subtract(1, "weeks").endOf("week").toDate();
+  return [fromDate, toDate];
 };
 export { router as microsoftUserRouter };

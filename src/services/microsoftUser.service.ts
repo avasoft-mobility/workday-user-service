@@ -80,16 +80,6 @@ const getMicrosoftUsersAttendance = async (
       date: moment(new Date()).add(1).format("YYYY-MM-DD"),
     }
   );
-
-  // const axiosResponse = await axios.post(
-  //   `https://wqefm8ssja.execute-api.us-east-2.amazonaws.com/dev/attendance/bulk-retrieve`,
-  //   {
-  //     userIds: usersId,
-  //     date: moment(new Date()).add(1).format("YYYY-MM-DD"),
-  //   }
-  // );
-
-  // const usersAttendance = axiosResponse.data;
   return usersAttendance;
 };
 
