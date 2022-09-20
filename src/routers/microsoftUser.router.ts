@@ -18,6 +18,7 @@ import LambdaClient from "../helpers/LambdaClient";
 import Attendance from "../models/Attendance.model";
 import TodoStats from "../models/Todo-Stats.model";
 import AttendanceStats from "../models/Attendance-Stats.model";
+import axios from "axios";
 
 const router = express.Router();
 
@@ -35,6 +36,33 @@ router.get("/mobile", (req, res) => {
 
 router.post("/attendance", (req, res) => {
   return res.send({ message: "Attendance Service is working fine" });
+});
+
+router.get("/admin-access-token", async (req: Request, res: Response) => {
+  try {
+    const body = {
+      client_id: "d9aa0b7c-c26e-49e9-8c9e-dcbd94a17947",
+      scope: "https://graph.microsoft.com/.default",
+      client_secret: "dEr8Q~pqBvfbaFn7tUjSv6i_SP6_zMY4.vHZSdcX",
+      grant_type: "client_credentials",
+    };
+
+    const params = new URLSearchParams();
+    params.append("client_id", "d9aa0b7c-c26e-49e9-8c9e-dcbd94a17947");
+    params.append("scope", "https://graph.microsoft.com/.default");
+    params.append("client_secret", "dEr8Q~pqBvfbaFn7tUjSv6i_SP6_zMY4.vHZSdcX");
+    params.append("grant_type", "client_credentials");
+
+    const response = await axios.post(
+      "https://login.microsoftonline.com/716f83c3-7abd-42a1-86d2-e0207f4aa981/oauth2/v2.0/token",
+      params
+    );
+    return res.json(response.data);
+  } catch (error) {
+    return res
+      .status(500)
+      .send({ message: (error as unknown as Error).message });
+  }
 });
 
 // Get a specific user detail
