@@ -8,7 +8,11 @@ import { Todo } from "../models/Todos.model";
 import MyStats from "../models/myStats.model";
 import TeamStats from "../models/teamStats.model";
 import MicrosoftUser from "../models/microsoftUser.model";
-import { getMyTeamReport } from "../services/microsoftUser.service";
+import {
+  getAllDomains,
+  getAllUsers,
+  getMyTeamReport,
+} from "../services/microsoftUser.service";
 import {
   graphReportingsValidation,
   exceptionalValidation,
@@ -38,6 +42,22 @@ router.post("/attendance", (req, res) => {
   return res.send({ message: "Attendance Service is working fine" });
 });
 
+//Get all domains
+router.get("/", async (req: Request, res: Response) => {
+  try {
+    const result = await getAllUsers();
+    if (!result) {
+      return res.status(400).send({ message: "No users found." });
+    }
+    if (result) {
+      return res.status(200).send(result);
+    }
+  } catch (error) {
+    Rollbar.error(error as unknown as Error, req);
+    res.status(500).send({ message: (error as unknown as Error).message });
+  }
+});
+
 router.get("/admin-access-token", async (req: Request, res: Response) => {
   try {
     const body = {
@@ -64,6 +84,23 @@ router.get("/admin-access-token", async (req: Request, res: Response) => {
       .send({ message: (error as unknown as Error).message });
   }
 });
+
+//Get All domains
+router.get("/domains", async (req: Request, res: Response) => {
+  try {
+    const result = await getAllDomains();
+    if (!result) {
+      return res.status(400).send({ message: "No domains found." });
+    }
+    if (result) {
+      return res.status(200).send(result);
+    }
+  } catch (error) {
+    Rollbar.error(error as unknown as Error, req);
+    res.status(500).send({ message: (error as unknown as Error).message });
+  }
+});
+
 
 // Get a specific user detail
 router.get("/:userId", async (req: Request, res: Response) => {

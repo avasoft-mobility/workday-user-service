@@ -123,4 +123,16 @@ const mapUsersWithReporterName = (
   return response;
 };
 
-export { getMyTeamReport };
+const getAllUsers = async (): Promise<TeamReport[]> => {
+  const allUsers = (await microsoftUsersSchema.find()) as TeamReport[];
+  return allUsers;
+};
+
+const getAllDomains = async (): Promise<string[]> => {
+  const allDomains = (await microsoftUsersSchema.distinct(
+    "practice"
+  )) as string[];
+  return allDomains;
+};
+
+export { getMyTeamReport, getAllUsers, getAllDomains };
