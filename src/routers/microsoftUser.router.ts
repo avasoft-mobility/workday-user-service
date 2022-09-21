@@ -212,6 +212,7 @@ router.get(
     try {
       const userId = req.params.userId as string;
       const targetUserId = req.params.targetUserId as string;
+      const date = req.query.date;
 
       const validationResponse = graphReportingsValidation(
         userId,
@@ -242,7 +243,8 @@ router.get(
 
       const response = await getGraphViewData(
         authorizationResponse.user,
-        targetUserId
+        targetUserId,
+        date as string
       );
 
       res.status(validationResponse.code).json(response);

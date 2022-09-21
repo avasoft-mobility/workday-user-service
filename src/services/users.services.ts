@@ -16,7 +16,8 @@ interface ExceptionalValidationResponse {
 
 const getGraphViewData = async (
   loggedInUser: GraphViewUser,
-  targetUserId: string
+  targetUserId: string,
+  date?: string
 ): Promise<GraphViewUser[]> => {
   let response: GraphViewUser[] = [];
   const targetUser = await MicrosoftUser.findOne({
@@ -45,8 +46,8 @@ const getGraphViewData = async (
       reportings: directReport.reportings,
       managerId: directReport.managerId,
       last_access: directReport.last_access,
-      todos: await getUserTodos(directReport.userId, defaultTags),
-      attendance: await getUserAttendance(directReport.userId),
+      todos: await getUserTodos(directReport.userId, defaultTags, date),
+      attendance: await getUserAttendance(directReport.userId, date),
       __v: directReport.__v,
     });
   }
@@ -138,13 +139,15 @@ const getMatchingReports = async (
 
 const getUserTodos = async (
   userId: string,
-  defaultTags: Tag[]
+  defaultTags: Tag[],
+  date?: string
 ): Promise<Todo[]> => {
   let userTodos: Todo[] = [];
+
   const lambdaClient = new LambdaClient("Todos");
   const response = (await lambdaClient.get(`/todos`, {
     userId: userId,
-    date: moment().format("YYYY-MM-DD"),
+    date: date ? date : moment().format("YYYY-MM-DD"),
   })) as TodoWithTagId[];
 
   if (!response) {
@@ -175,12 +178,13 @@ const getUserTodos = async (
 };
 
 const getUserAttendance = async (
-  userId: string
+  userId: string,
+  date?: string
 ): Promise<Attendance | undefined> => {
   const lambdaClient = new LambdaClient("Attendance");
   const userAttendance = (await lambdaClient.get(`/attendance`, {
     userId: userId,
-    date: moment().format("YYYY-MM-DD"),
+    date: date ? date : moment().format("YYYY-MM-DD"),
     object: "true",
   })) as Attendance;
 
