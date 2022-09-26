@@ -1,42 +1,34 @@
+import axios from "axios";
 import express, { Request, Response } from "express";
-import microsoftUser from "../schema/microsoftUserSchema";
-import leaderShip from "../schema/leaderShipSchema";
-import { Rollbar } from "../helpers/Rollbar";
 import moment from "moment";
-import UserTodoStatistics from "../models/userTodoStatistics.model";
-import { Todo } from "../models/Todos.model";
-import MyStats from "../models/myStats.model";
-import TeamStats from "../models/teamStats.model";
+import LambdaClient from "../helpers/LambdaClient";
+import { Rollbar } from "../helpers/Rollbar";
+import { sendReporteesRequestMail } from "../helpers/SgMail";
+import AttendanceStats from "../models/Attendance-Stats.model";
 import MicrosoftUser from "../models/microsoftUser.model";
+import MyStats from "../models/myStats.model";
+import RequestedReportees from "../models/RequestedReportees.model";
+import TeamStats from "../models/teamStats.model";
+import TodoStats from "../models/Todo-Stats.model";
+import { Todo } from "../models/Todos.model";
+import UserTodoStatistics from "../models/userTodoStatistics.model";
+import microsoftUser from "../schema/microsoftUserSchema";
 import {
   getAllDomains,
   getAllUsers,
-  updateRequestStatus,
   getMyTeamReport,
-  requestReportees,
   migrateReportees,
-  getUserReportees,
-  getReporteeDetails,
+  requestReportees,
+  sendMailRequest,
+  updateRequestStatus,
 } from "../services/microsoftUser.service";
 import {
-  graphReportingsValidation,
   exceptionalValidation,
   getGraphViewData,
+  graphReportingsValidation,
 } from "../services/users.services";
-import LambdaClient from "../helpers/LambdaClient";
-import Attendance from "../models/Attendance.model";
-import TodoStats from "../models/Todo-Stats.model";
-import AttendanceStats from "../models/Attendance-Stats.model";
-import axios from "axios";
-import MicrosoftUserOverride from "../models/microsoftUserOverride.model";
-import { sendReporteesRequestMail } from "../helpers/SgMail";
 
 const router = express.Router();
-
-type RequestedReportees = {
-  toUser: MicrosoftUser;
-  reportees: MicrosoftUser[];
-};
 
 router.get("/check", (req, res) => {
   return res.send({ message: "Users Service is working fine" });
@@ -393,11 +385,18 @@ router.get(
         return;
       }
 
-      const mailSubject =  "Reportee migration - successfull.";
-      const mailBody = "Your request has been accepted and reportees are updated.";
+      const mailSubject = "Reportee migration - successfull.";
+      const mailBody =
+        "Your request has been accepted and reportees are updated.";
       const mailRequest = "accept";
 
-      const requestAcceptResult = await sendMailRequest(toUserId, result._id, mailSubject,mailBody,mailRequest);
+      const requestAcceptResult = await sendMailRequest(
+        toUserId,
+        result._id,
+        mailSubject,
+        mailBody,
+        mailRequest
+      );
 
       //get toUser detail
 
@@ -424,8 +423,9 @@ router.get(
         return;
       }
 
-      const mailSubject =  "Reportee migration - Rejected.";
-      const mailBody = "Your request for migration of reportees is been rejected.";
+      const mailSubject = "Reportee migration - Rejected.";
+      const mailBody =
+        "Your request for migration of reportees is been rejected.";
       const mailRequest = "accept";
 
       const requestAcceptResult = await sendMailRequest(
@@ -560,44 +560,6 @@ const getAttendanceForStats = async (
     }
   )) as AttendanceStats;
   return response;
-};
-
-const sendMailRequest = async (userId: string, migrationId: string, mailSubject: string, mailBody:string, mailType : string) => {
-  const getUserDetails = await getUserReportees(userId);
-
-  if (getUserDetails) {
-    //get reportee details of toUser
-    const employeeDetails = await getReporteeDetails(
-      getUserDetails?.reportings
-    );
-
-    if (employeeDetails) {
-      const uniqueIds: {}[] = [];
-
-      const unique = employeeDetails.filter((element) => {
-        const isDuplicate = getUserDetails.userId.includes(element.userId);
-
-        if (!isDuplicate) {
-          uniqueIds.push(element.userId);
-          return true;
-        }
-        return false;
-      });
-      //mail to user
-      const mailRequest = await sendReporteesRequestMail(
-        "Hi " + getUserDetails?.name,
-        mailType,
-        mailSubject,
-        migrationId,
-        mailBody,
-        unique,
-        getUserDetails
-      );
-      if (mailRequest) {
-        return mailRequest;
-      }
-    }
-  }
 };
 
 const getMyStatistics = async (

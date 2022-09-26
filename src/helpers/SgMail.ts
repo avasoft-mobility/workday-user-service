@@ -14,7 +14,8 @@ const sendReporteesRequestMail = async (
   toUserDetails: MicrosoftUser
 ) => {
   sgMail.setApiKey(process.env.SEND_GRID_API_KEY!);
-  const msg = {
+
+  const REQUEST_MESSAGE_TO_ADMIN = {
     to: ["surya.r@avasoft.com"],
     from: "workday@avasoft.com",
     subject: mailSubject,
@@ -133,7 +134,7 @@ const sendReporteesRequestMail = async (
   </body>`,
   };
 
-  const msg2 = {
+  const ADMIN_RESPONSE_MESSAGE_TO_USER = {
     to: toUserDetails.mail,
     from: "workday@avasoft.com",
     subject: mailSubject,
@@ -231,7 +232,7 @@ const sendReporteesRequestMail = async (
   </body>`,
   };
 
-  const msg3 = {
+  const REQUEST_MESSAGE_TO_USER = {
     to: toUserDetails.mail,
     from: "workday@avasoft.com",
     subject: mailSubject,
@@ -331,16 +332,16 @@ const sendReporteesRequestMail = async (
   };
 
   if (mailRequest == "request") {
-    const result = await sgMail.sendMultiple(msg);
+    const result = await sgMail.sendMultiple(REQUEST_MESSAGE_TO_ADMIN);
     return result;
   }
   if (mailRequest == "accept" || mailRequest == "reject") {
-    const result = await sgMail.sendMultiple(msg2);
+    const result = await sgMail.sendMultiple(ADMIN_RESPONSE_MESSAGE_TO_USER);
     return result;
   }
 
   if (mailRequest == "toUser") {
-    const result = await sgMail.sendMultiple(msg3);
+    const result = await sgMail.sendMultiple(REQUEST_MESSAGE_TO_USER);
     return result;
   }
 };
