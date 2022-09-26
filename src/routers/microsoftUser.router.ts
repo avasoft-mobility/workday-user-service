@@ -42,7 +42,7 @@ router.post("/attendance", (req, res) => {
   return res.send({ message: "Attendance Service is working fine" });
 });
 
-//Get all domains
+//Get all users
 router.get("/", async (req: Request, res: Response) => {
   try {
     const result = await getAllUsers();
