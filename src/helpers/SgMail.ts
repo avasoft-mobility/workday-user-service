@@ -1,18 +1,19 @@
 import sgMail from "@sendgrid/mail";
 import MicrosoftUser from "../models/microsoftUser.model";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const sendReporteesRequestMail = async (
-  teamName:string,
-  mailRequest:string,
+  teamName: string,
+  mailRequest: string,
   mailSubject: string,
   migrationId: string,
   message: string,
   reportees: MicrosoftUser[],
   toUserDetails: MicrosoftUser
 ) => {
-  sgMail.setApiKey(
-    "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"
-  );
+  sgMail.setApiKey(process.env.SEND_GRID_API_KEY!);
   const msg = {
     to: ["surya.r@avasoft.com"],
     from: "workday@avasoft.com",
@@ -131,7 +132,7 @@ const sendReporteesRequestMail = async (
   </div>
   </body>`,
   };
-  
+
   const msg2 = {
     to: toUserDetails.mail,
     from: "workday@avasoft.com",
@@ -329,22 +330,19 @@ const sendReporteesRequestMail = async (
   </body>`,
   };
 
-  if (mailRequest=="request") {
+  if (mailRequest == "request") {
     const result = await sgMail.sendMultiple(msg);
     return result;
   }
-  if(mailRequest=="accept" || mailRequest=="reject")
-  {
+  if (mailRequest == "accept" || mailRequest == "reject") {
     const result = await sgMail.sendMultiple(msg2);
     return result;
   }
 
-  if(mailRequest == "toUser")
-  {
+  if (mailRequest == "toUser") {
     const result = await sgMail.sendMultiple(msg3);
     return result;
   }
-  
 };
 
 export { sendReporteesRequestMail };

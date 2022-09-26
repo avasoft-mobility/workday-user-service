@@ -143,7 +143,6 @@ const requestReportees = async (
   reportee: string[],
   requestStatus: string
 ): Promise<MicrosoftUserOverride> => {
-  console.log(reportee);
   const requestedData = {
     toUserId: userId,
     reportees: reportee,
