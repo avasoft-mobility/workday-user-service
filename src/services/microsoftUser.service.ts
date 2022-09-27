@@ -1,7 +1,11 @@
 import moment from "moment";
 import LambdaClient from "../helpers/LambdaClient";
+import { sendReporteesRequestMail } from "../helpers/SgMail";
 import AttendanceModel from "../models/Attendance.model";
+import MicrosoftUser from "../models/microsoftUser.model";
+import MicrosoftUserOverride from "../models/microsoftUserOverride.model";
 import TeamReport from "../models/TeamReport.model";
+import microsoftUserOverrideSchema from "../schema/microsoftUserOverrideSchema";
 import microsoftUsersSchema from "../schema/microsoftUserSchema";
 const axios = require("axios");
 
@@ -135,4 +139,121 @@ const getAllDomains = async (): Promise<string[]> => {
   return allDomains;
 };
 
-export { getMyTeamReport, getAllUsers, getAllDomains };
+const requestReportees = async (
+  userId: string,
+  reportee: string[],
+  requestStatus: string
+): Promise<MicrosoftUserOverride> => {
+  const requestedData = {
+    toUserId: userId,
+    reportees: reportee,
+    status: requestStatus,
+  };
+
+  const response = await microsoftUserOverrideSchema.create(requestedData);
+
+  return response;
+};
+
+const updateRequestStatus = async (
+  migrationId: string,
+  requestStatus: string
+): Promise<MicrosoftUserOverride | null> => {
+  const response = await microsoftUserOverrideSchema.findOneAndUpdate(
+    { _id: migrationId },
+    { $set: { status: requestStatus } }
+  );
+
+  return response;
+};
+
+const migrateReportees = async (
+  toUserId: string,
+  reportees: string[]
+): Promise<MicrosoftUser | null> => {
+  const response = await microsoftUsersSchema.findOneAndUpdate(
+    { userId: toUserId },
+    { $set: { reportings: reportees } }
+  );
+
+  return response;
+};
+
+const getUserReportees = async (
+  userId: string
+): Promise<MicrosoftUser | null> => {
+  const response = await microsoftUsersSchema.findOne({
+    userId: userId,
+  });
+  return response;
+};
+
+const getReporteeDetails = async (
+  reporteesId: string[]
+): Promise<MicrosoftUser[]> => {
+  const response = await microsoftUsersSchema.find({
+    userId: { $in: reporteesId },
+  });
+
+  return response;
+};
+
+const sendMailRequest = async (
+  userId: string,
+  migrationId: string,
+  mailSubject: string,
+  mailBody: string,
+  mailType: string
+) => {
+  const getUserDetails = await getUserReportees(userId);
+  let employeeDetails: MicrosoftUser[] = [];
+  if (!getUserDetails) {
+    return { code: 200, message: "User not available" };
+  }
+
+  if (getUserDetails) {
+    //get reportee details of toUser
+    employeeDetails = await getReporteeDetails(getUserDetails?.reportings);
+  }
+
+  if (employeeDetails) {
+    const uniqueIds: string[] = [];
+    const unique = employeeDetails.filter((element) => {
+      const isDuplicate = getUserDetails.userId.includes(element.userId);
+
+      if (!isDuplicate) {
+        uniqueIds.push(element.userId);
+        return true;
+      }
+
+      return false;
+    });
+
+    //mail to user
+    const mailRequest = await sendReporteesRequestMail(
+      "Hi " + getUserDetails?.name,
+      mailType,
+      mailSubject,
+      migrationId,
+      mailBody,
+      unique,
+      getUserDetails
+    );
+    
+    if (mailRequest) {
+      return mailRequest;
+    }
+  }
+};
+
+export {
+  getMyTeamReport,
+  getAllUsers, 
+  getAllDomains ,
+  requestReportees, 
+  updateRequestStatus,
+  migrateReportees,
+  getUserReportees,
+  getReporteeDetails,
+  sendMailRequest,
+};

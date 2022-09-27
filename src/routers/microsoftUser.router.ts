@@ -1,28 +1,32 @@
+import axios from "axios";
 import express, { Request, Response } from "express";
-import microsoftUser from "../schema/microsoftUserSchema";
-import leaderShip from "../schema/leaderShipSchema";
-import { Rollbar } from "../helpers/Rollbar";
 import moment from "moment";
-import UserTodoStatistics from "../models/userTodoStatistics.model";
-import { Todo } from "../models/Todos.model";
-import MyStats from "../models/myStats.model";
-import TeamStats from "../models/teamStats.model";
+import LambdaClient from "../helpers/LambdaClient";
+import { Rollbar } from "../helpers/Rollbar";
+import { sendReporteesRequestMail } from "../helpers/SgMail";
+import AttendanceStats from "../models/Attendance-Stats.model";
 import MicrosoftUser from "../models/microsoftUser.model";
+import MyStats from "../models/myStats.model";
+import RequestedReportees from "../models/RequestedReportees.model";
+import TeamStats from "../models/teamStats.model";
+import TodoStats from "../models/Todo-Stats.model";
+import { Todo } from "../models/Todos.model";
+import UserTodoStatistics from "../models/userTodoStatistics.model";
+import microsoftUser from "../schema/microsoftUserSchema";
 import {
   getAllDomains,
   getAllUsers,
   getMyTeamReport,
+  migrateReportees,
+  requestReportees,
+  sendMailRequest,
+  updateRequestStatus,
 } from "../services/microsoftUser.service";
 import {
-  graphReportingsValidation,
   exceptionalValidation,
   getGraphViewData,
+  graphReportingsValidation,
 } from "../services/users.services";
-import LambdaClient from "../helpers/LambdaClient";
-import Attendance from "../models/Attendance.model";
-import TodoStats from "../models/Todo-Stats.model";
-import AttendanceStats from "../models/Attendance-Stats.model";
-import axios from "axios";
 
 const router = express.Router();
 
@@ -292,6 +296,155 @@ router.get(
   }
 );
 
+//Request for reportees
+router.post("/reportee-migration", async (req: Request, res: Response) => {
+  try {
+    const requestedBody: RequestedReportees = req.body;
+    if (!requestedBody) {
+      res.status(400).send({ message: "Data is required." });
+      return;
+    }
+
+    const toUserId = requestedBody.toUser.userId as string;
+    const status = "requested";
+
+    const reportees = requestedBody.reportees.map((reportee: MicrosoftUser) => {
+      return reportee.userId;
+    });
+    reportees.push(requestedBody.toUser.userId);
+
+    //request for reportee migration
+    const result = await requestReportees(toUserId, reportees, status);
+    if (!result) {
+      res.status(400).send({ message: "failed to send request" });
+      return;
+    }
+
+    //mail for workday-team
+    const teamName = "Hi Team";
+    const mailSubject = "Reportee Migration Request";
+    const message = "Please find the below details for reportee migration.";
+    const mailRequest = await sendReporteesRequestMail(
+      teamName,
+      "request",
+      mailSubject,
+      result._id,
+      message,
+      req.body.reportees,
+      requestedBody.toUser
+    );
+
+    if (mailRequest) {
+      //mail for user
+      const toUserName = "Hi " + requestedBody.toUser.name;
+      const mailSubjectToUser = "Request for reportee migration - successfull";
+      const messageToUser =
+        "Please find the below details for reportee migration.";
+      const mailRequestToUser = await sendReporteesRequestMail(
+        toUserName,
+        "toUser",
+        mailSubjectToUser,
+        result._id,
+        messageToUser,
+        req.body.reportees,
+        requestedBody.toUser
+      );
+      if (mailRequestToUser) {
+        return res.status(200).send("Successfull request for migration.");
+      }
+    }
+  } catch (error) {
+    Rollbar.error(error as unknown as Error, req);
+    res.status(500).send({ message: (error as unknown as Error).message });
+  }
+});
+
+//RequestAccept
+router.get(
+  "/reportee-migration/:migrationId/accept",
+  async (req: Request, res: Response) => {
+    try {
+      const migrationId = req.params.migrationId as string;
+      const status = "accepted";
+
+      //update status in microsoftovarride
+      const result = await updateRequestStatus(migrationId, status);
+      if (!result) {
+        res.status(400).send({ message: "failed to accept request" });
+        return;
+      }
+
+      //update reportees in microsoftusers
+      const toUserId = result?.toUserId;
+      const reportees = result?.reportees;
+      const migrationResult = await migrateReportees(toUserId, reportees);
+      if (!migrationResult) {
+        res
+          .status(400)
+          .send({ message: "Request accepted but failed to migrate" });
+        return;
+      }
+
+      const mailSubject = "Reportee migration - successfull.";
+      const mailBody =
+        "Your request has been accepted and reportees are updated.";
+      const mailRequest = "accept";
+
+      const requestAcceptResult = await sendMailRequest(
+        toUserId,
+        result._id,
+        mailSubject,
+        mailBody,
+        mailRequest
+      );
+
+      //get toUser detail
+
+      if (requestAcceptResult) {
+        return res.status(200).send("Your request has been accepted");
+      }
+    } catch (error) {
+      Rollbar.error(error as unknown as Error, req);
+      res.status(500).send({ message: (error as unknown as Error).message });
+    }
+  }
+);
+
+//RequestReject
+router.get(
+  "/reportee-migration/:migrationId/reject",
+  async (req: Request, res: Response) => {
+    try {
+      const migrationId = req.params.migrationId as string;
+      const status = "rejected";
+      const result = await updateRequestStatus(migrationId, status);
+      if (!result) {
+        res.status(400).send({ message: "failed to reject request" });
+        return;
+      }
+
+      const mailSubject = "Reportee migration - Rejected.";
+      const mailBody =
+        "Your request for migration of reportees is been rejected.";
+      const mailRequest = "accept";
+
+      const requestAcceptResult = await sendMailRequest(
+        result.toUserId,
+        result._id,
+        mailSubject,
+        mailBody,
+        mailRequest
+      );
+      if (requestAcceptResult) {
+        return res.status(200).send("Your request has been rejected.");
+      }
+    } catch (error) {
+      Rollbar.error(error as unknown as Error, req);
+      res.status(500).send({ message: (error as unknown as Error).message });
+    }
+  }
+);
+
 // function to get stats of user
 async function getStats(userId: string): Promise<UserTodoStatistics> {
   try {
@@ -330,9 +483,6 @@ async function getStats(userId: string): Promise<UserTodoStatistics> {
       moment(toDate).format("YYYY-MM-DD"),
       user.reportings
     );
-
-    console.log("statsTodos", statsTodos);
-    console.log("statsAttendance", statsAttendance);
 
     result.myStatistics = await getMyStatistics(
       userId,
