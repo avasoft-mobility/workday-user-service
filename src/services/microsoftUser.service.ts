@@ -246,6 +246,59 @@ const sendMailRequest = async (
   }
 };
 
+const alterCollection = async (): Promise<any> => {
+  const params = new URLSearchParams();
+  params.append("client_id", "d9aa0b7c-c26e-49e9-8c9e-dcbd94a17947");
+  params.append("scope", "https://graph.microsoft.com/.default");
+  params.append("client_secret", "dEr8Q~pqBvfbaFn7tUjSv6i_SP6_zMY4.vHZSdcX");
+  params.append("grant_type", "client_credentials");
+
+  const tokenResponse = await axios.post(
+    "https://login.microsoftonline.com/716f83c3-7abd-42a1-86d2-e0207f4aa981/oauth2/v2.0/token",
+    params
+  );
+
+  const config = {
+    headers: { Authorization: `Bearer ${tokenResponse.data.access_token}` },
+  };
+
+  const users = await microsoftUsersSchema.find();
+
+  const result: any = [];
+  for (const user of users) {
+    let response: any;
+
+    try {
+      response = await axios.get(
+        `https://graph.microsoft.com/v1.0/users/${user.userId}?$select=displayName,employeeId&$expand=manager($select=id,displayName)`,
+        config
+      );
+
+      result.push({
+        userId: user.userId,
+        name: user.name,
+        role: user.role,
+        practice: user.practice,
+        mail: user.mail,
+        managerId: response.data.manager ? response.data.manager.id : "Manager",
+        employeeId: response.data.employeeId,
+        reportings: user.reportings,
+      });
+    } catch (error: any) {
+      console.log(error.response.config.url);
+    }
+  }
+
+  const deleteManyResponse = await microsoftUsersSchema.deleteMany();
+
+  if (deleteManyResponse) {
+    const createResponse = await microsoftUsersSchema.create(result);
+    return createResponse;
+  }
+
+  return { message: "Table drop error" };
+};
+
 export {
   getMyTeamReport,
   getAllUsers, 
@@ -256,4 +309,5 @@ export {
   getUserReportees,
   getReporteeDetails,
   sendMailRequest,
+  alterCollection,
 };

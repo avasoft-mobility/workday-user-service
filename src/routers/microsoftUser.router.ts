@@ -14,6 +14,7 @@ import { Todo } from "../models/Todos.model";
 import UserTodoStatistics from "../models/userTodoStatistics.model";
 import microsoftUser from "../schema/microsoftUserSchema";
 import {
+  alterCollection,
   getAllDomains,
   getAllUsers,
   getMyTeamReport,
@@ -105,6 +106,16 @@ router.get("/domains", async (req: Request, res: Response) => {
   }
 });
 
+router.get("/add-hive-properties", async (req: Request, res: Response) => {
+  try {
+    const response = await alterCollection();
+
+    res.status(200).json(response);
+  } catch (error) {
+    Rollbar.error(error as unknown as Error, req);
+    res.status(500).json({ message: (error as unknown as Error).message });
+  }
+});
 
 // Get a specific user detail
 router.get("/:userId", async (req: Request, res: Response) => {
