@@ -113,7 +113,7 @@ const sendReporteesRequestMail = async (
       }, "")}
     </table>
     <div id="buttons">
-    <a href="http://localhost:3000/users/reportee-migration/${migrationId}/reject" style="border-radius: 4px;
+    <a href="https://wqefm8ssja.execute-api.us-east-2.amazonaws.com/dev/users/reportee-migration/${migrationId}/reject" style="border-radius: 4px;
     border: 1px solid #DB4437;
     font-size:12px;
     float: right;
@@ -130,7 +130,7 @@ const sendReporteesRequestMail = async (
     background: #0F9D58;
     color: #ffffff;
     padding: 10px 16px ;
-    border-radius: 4px;" href="http://localhost:3000/users/reportee-migration/${migrationId}/accept" id="button">ACCEPT REQUEST</a>
+    border-radius: 4px;" href="https://wqefm8ssja.execute-api.us-east-2.amazonaws.com/dev/users/reportee-migration/${migrationId}/accept" id="button">ACCEPT REQUEST</a>
    
     </div>
     <div>
