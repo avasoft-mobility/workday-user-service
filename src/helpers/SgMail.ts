@@ -16,13 +16,7 @@ const sendReporteesRequestMail = async (
   sgMail.setApiKey(process.env.SEND_GRID_API_KEY!);
 
   const REQUEST_MESSAGE_TO_ADMIN = {
-    to: [
-      "Ragul.RA@avasoft.com",
-      "Navayuvan.S@avasoft.com",
-      "Deepaksurya.m@avasoft.com",
-      "Clement.A@avasoft.com",
-      "Jiju.S@avasoft.com",
-    ],
+    to: ["Ragul.RA@avasoft.com"],
     from: "workday@avasoft.com",
     subject: mailSubject,
     html: `<body>
