@@ -168,7 +168,7 @@ const acceptMigrationRequest = async (
 ): Promise<{
   code: number;
   message?: string;
-  body?: MicrosoftUserOverride;
+  body?: PopulateMicrosoftUserOverride;
 }> => {
   if (!userId) {
     return { code: 400, message: "User Id is required" };
@@ -183,15 +183,25 @@ const acceptMigrationRequest = async (
     return { code: 400, message: "Migration Id is required" };
   }
 
+  if (!isValidObjectId(migrationId)) {
+    return { code: 400, message: "Migration Id is not valid" };
+  }
+
   const result = await microsoftUserOverrideSchema.findOne({
-    toUserId: userId,
     _id: migrationId,
   });
 
   if (!result) {
     return {
       code: 404,
-      message: `Migration detail is not found for this Migration Id: ${migrationId} and User Id: ${userId}`,
+      message: `Migration detail is not found for this Migration Id: ${migrationId}`,
+    };
+  }
+
+  if (result.status === "accepted" && result.acceptedBy && result.isActive) {
+    return {
+      code: 201,
+      message: `Migration already updated for this migration Id: ${migrationId}`,
     };
   }
 
@@ -210,8 +220,11 @@ const acceptMigrationRequest = async (
     return { code: 400, message: "Failed to accept request" };
   }
 
-  const reportees = result.reportees;
-  const migrationResult = await migrateReportees(userId, reportees);
+  let reportees = result.reportees;
+  reportees.push(result.toUserId);
+  reportees = [...new Set(reportees)];
+
+  const migrationResult = await migrateReportees(result.toUserId, reportees);
   if (!migrationResult) {
     return { code: 400, message: "Request accepted but failed to migrate" };
   }
