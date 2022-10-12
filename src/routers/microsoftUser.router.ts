@@ -312,6 +312,7 @@ router.get(
   "/:userId/reportee-migration/:migrationId",
   async (req: Request, res: Response) => {
     try {
+      //Below userId is not used currenlty It will be used for the future Authorization and Authentication purpose
       const userId = req.params.userId as string;
       const migrationId = req.params.migrationId as string;
 

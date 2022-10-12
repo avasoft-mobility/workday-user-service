@@ -1,4 +1,5 @@
 import moment from "moment";
+import { isValidObjectId } from "mongoose";
 import LambdaClient from "../helpers/LambdaClient";
 import { sendReporteesRequestMail } from "../helpers/SgMail";
 import AttendanceModel from "../models/Attendance.model";
@@ -311,6 +312,10 @@ const getMigration = async (
 }> => {
   if (!migrationId) {
     return { code: 400, message: "Migration Id is required" };
+  }
+
+  if (!isValidObjectId(migrationId)) {
+    return { code: 400, message: "Migration Id is not valid" };
   }
 
   const result = await microsoftUserOverrideSchema.findOne({
