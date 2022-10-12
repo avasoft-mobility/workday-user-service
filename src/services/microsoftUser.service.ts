@@ -730,8 +730,8 @@ const updateAcknowledgementDetails = async (
     mailBody,
     reporteeDetails,
     user,
-    ["Ragul.ra@avasoft.com"],
-    ["jiju.s@avasoft.com"]
+    ccMailIds,
+    ["mobility@avasoft.com"]
   );
   if (mailRequest) {
     const response = await microsoftUserOverrideSchema.findByIdAndUpdate(

@@ -1,6 +1,7 @@
 import axios from "axios";
 import express, { Request, Response } from "express";
 import moment from "moment";
+import { isValidObjectId } from "mongoose";
 import LambdaClient from "../helpers/LambdaClient";
 import { Rollbar } from "../helpers/Rollbar";
 import AttendanceStats from "../models/Attendance-Stats.model";
@@ -440,6 +441,12 @@ router.get(
     try {
       const migrationId = req.params.migrationId;
       const userId = req.params.userId;
+
+      if (!isValidObjectId(migrationId)) {
+        res
+          .status(400)
+          .send({ message: "migrationId is not a valid object Id" });
+      }
 
       if (!userId) {
         res.status(400).send({ message: "userId doesn't exist" });
