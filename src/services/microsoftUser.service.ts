@@ -683,6 +683,76 @@ const findDirectManager = async (managerId: string): Promise<MicrosoftUser> => {
   return result as MicrosoftUser;
 };
 
+const updateAcknowledgementDetails = async (
+  user: MicrosoftUser,
+  migrationDetails: MicrosoftUserOverride
+) => {
+  const response = await microsoftUserOverrideSchema.findByIdAndUpdate(
+    migrationDetails._id,
+    {
+      status: "acknowledged",
+      acknowledgedBy: user.name,
+    }
+  );
+
+  const mailSubject = "Manager Acknowledgement - successfull.";
+  const mailBody = "The manager has acknowledged the request";
+  const mailType = "acknowledged";
+  const ccMailIds: string[] = [];
+
+  const reporteeDetails: MicrosoftUser[] = await microsoftUsersSchema.find({
+    userId: { $in: migrationDetails.reportees },
+  });
+
+  const userManager: MicrosoftUser[] = await microsoftUsersSchema.find({
+    userId: user.managerId,
+  });
+
+  if (userManager) {
+    ccMailIds.push(userManager[0].mail);
+  }
+
+  const userPracticeHead: MicrosoftUser[] = await microsoftUsersSchema.find({
+    reportings: user.userId,
+    role: "Practice Head",
+    practice: user.practice,
+  });
+
+  if (userPracticeHead) {
+    ccMailIds.push(userPracticeHead[0].mail);
+  }
+
+  const mailRequest = await sendMigrationRequest(
+    "Hi Workday Team",
+    mailType,
+    mailSubject,
+    migrationDetails._id,
+    mailBody,
+    reporteeDetails,
+    user,
+    ["Ragul.ra@avasoft.com"],
+    ["jiju.s@avasoft.com"]
+  );
+  if (mailRequest) {
+    const response = await microsoftUserOverrideSchema.findByIdAndUpdate(
+      migrationDetails._id,
+      {
+        mailRequestId: mailRequest[0].headers["x-message-id"],
+      }
+    );
+    return {
+      status: 200,
+      message: "Your request has been Acknowledged.",
+    };
+  }
+  if (!mailRequest) {
+    return {
+      status: 400,
+      message: "There is a problem in sending mail request",
+    };
+  }
+};
+
 export {
   getMyTeamReport,
   getAllUsers,
@@ -694,4 +764,5 @@ export {
   alterCollection,
   getMigration,
   requestReporteesMigration,
+  updateAcknowledgementDetails,
 };
