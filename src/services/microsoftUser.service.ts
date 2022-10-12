@@ -7,7 +7,6 @@ import {
   MicrosoftUserOverride,
   PopulateMicrosoftUserOverride,
 } from "../models/microsoftUserOverride.model";
-import MicrosoftUserOverrideExchange from "../models/MicrosoftUserOverrideExchange.model";
 import TeamReport from "../models/TeamReport.model";
 import microsoftUserOverrideSchema from "../schema/microsoftUserOverrideSchema";
 import microsoftUsersSchema from "../schema/microsoftUserSchema";
@@ -362,7 +361,7 @@ const getMigration = async (
 export {
   getMyTeamReport,
   getAllUsers,
-  getAllDomains,
+  getAllDomains ,
   requestReportees,
   updateRequestStatus,
   migrateReportees,
