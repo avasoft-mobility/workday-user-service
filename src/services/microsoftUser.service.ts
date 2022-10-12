@@ -4,6 +4,7 @@ import { sendReporteesRequestMail } from "../helpers/SgMail";
 import AttendanceModel from "../models/Attendance.model";
 import MicrosoftUser from "../models/microsoftUser.model";
 import { MicrosoftUserOverride } from "../models/microsoftUserOverride.model";
+import MicrosoftUserOverrideExchange from "../models/MicrosoftUserOverrideExchange.model";
 import TeamReport from "../models/TeamReport.model";
 import microsoftUserOverrideSchema from "../schema/microsoftUserOverrideSchema";
 import microsoftUsersSchema from "../schema/microsoftUserSchema";
@@ -299,6 +300,52 @@ const alterCollection = async (): Promise<any> => {
   return { message: "Table drop error" };
 };
 
+const getMigration = async (
+  userId: string,
+  migrationId: string
+): Promise<{
+  code: number;
+  message?: string;
+  body?: MicrosoftUserOverrideExchange;
+}> => {
+  if (!userId) {
+    return { code: 400, message: "User Id is required" };
+  }
+
+  if (!migrationId) {
+    return { code: 400, message: "Migration Id is required" };
+  }
+
+  const result = await microsoftUserOverrideSchema.findOne({
+    toUserId: userId,
+    _id: Object(migrationId),
+  });
+
+  if (!result) {
+    return {
+      code: 404,
+      message: `Migration detail not found for this MigrationId: ${migrationId} and UserId: ${userId}`,
+    };
+  }
+
+  const reporteeIds = result.reportees;
+  const microsoftUsers = await microsoftUsersSchema.find({
+    userId: { $in: reporteeIds },
+  });
+
+  const OverrideUserWithReporteesObject = {
+    _id: result._id,
+    toUserId: result.toUserId,
+    reportees: microsoftUsers,
+    status: result.status,
+    createdAt: result.createdAt,
+    updatedAt: result.updatedAt,
+    __v: result.__v,
+  };
+
+  return { code: 200, body: OverrideUserWithReporteesObject };
+};
+
 export {
   getMyTeamReport,
   getAllUsers, 
@@ -310,4 +357,5 @@ export {
   getReporteeDetails,
   sendMailRequest,
   alterCollection,
+  getMigration,
 };

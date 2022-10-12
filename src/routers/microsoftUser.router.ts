@@ -17,6 +17,7 @@ import {
   alterCollection,
   getAllDomains,
   getAllUsers,
+  getMigration,
   getMyTeamReport,
   migrateReportees,
   requestReportees,
@@ -303,6 +304,27 @@ router.get(
     } catch (error) {
       Rollbar.error(error as unknown as Error, req);
       res.status(500).json({ message: (error as unknown as Error).message });
+    }
+  }
+);
+
+router.get(
+  "/:userId/reportee-migration/:migrationId",
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.params.userId as string;
+      const migrationId = req.params.migrationId as string;
+
+      const response = await getMigration(userId, migrationId);
+
+      if (response.code === 200) {
+        return res.status(response.code).json(response.body);
+      }
+
+      return res.status(response.code).json(response.message);
+    } catch (error) {
+      Rollbar.error(error as unknown as Error, req);
+      res.status(500).send({ message: (error as unknown as Error).message });
     }
   }
 );
