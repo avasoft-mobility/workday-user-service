@@ -136,6 +136,13 @@ const getAllUsers = async (): Promise<TeamReport[]> => {
   return allUsers;
 };
 
+const getUserById = async (id: String): Promise<MicrosoftUser> => {
+  const queryResult = await microsoftUsersSchema.findOne({
+    userId: id,
+  });
+  return queryResult as MicrosoftUser;
+};
+
 const getAllDomains = async (): Promise<string[]> => {
   const allDomains = (await microsoftUsersSchema.distinct(
     "practice"
@@ -155,16 +162,80 @@ const updateRequestStatus = async (
   return response;
 };
 
+const acceptMigrationRequest = async (
+  userId: string,
+  migrationId: string
+): Promise<{
+  code: number;
+  message?: string;
+  body?: MicrosoftUserOverride;
+}> => {
+  if (!userId) {
+    return { code: 400, message: "User Id is required" };
+  }
+
+  const acceptedUser = await getUserById(userId);
+  if (!acceptedUser) {
+    return { code: 404, message: "User not found" };
+  }
+
+  if (!migrationId) {
+    return { code: 400, message: "Migration Id is required" };
+  }
+
+  const result = await microsoftUserOverrideSchema.findOne({
+    toUserId: userId,
+    _id: migrationId,
+  });
+
+  if (!result) {
+    return {
+      code: 404,
+      message: `Migration detail is not found for this Migration Id: ${migrationId} and User Id: ${userId}`,
+    };
+  }
+
+  const updateUserOverride = await microsoftUserOverrideSchema.findOneAndUpdate(
+    { _id: migrationId },
+    {
+      $set: {
+        status: "accepted",
+        acceptedBy: acceptedUser.name,
+        isActive: true,
+      },
+    }
+  );
+
+  if (!updateUserOverride) {
+    return { code: 400, message: "Failed to accept request" };
+  }
+
+  const reportees = result.reportees;
+  const migrationResult = await migrateReportees(userId, reportees);
+  if (!migrationResult) {
+    return { code: 400, message: "Request accepted but failed to migrate" };
+  }
+
+  const mailSubject = "Reportee migration - successfull.";
+  const mailBody = "Your request has been accepted and reportees are updated.";
+  const mailRequest = "accept";
+
+  return {
+    code: 200,
+    message: "Your request has been accepted and reportees are updated.",
+  };
+};
+
 const migrateReportees = async (
   toUserId: string,
   reportees: string[]
-): Promise<MicrosoftUser | null> => {
+): Promise<MicrosoftUser> => {
   const response = await microsoftUsersSchema.findOneAndUpdate(
     { userId: toUserId },
     { $set: { reportings: reportees } }
   );
 
-  return response;
+  return response as MicrosoftUser;
 };
 
 const getUserReportees = async (
@@ -465,6 +536,7 @@ export {
   getMyTeamReport,
   getAllUsers,
   getAllDomains,
+  acceptMigrationRequest,
   updateRequestStatus,
   migrateReportees,
   getUserReportees,

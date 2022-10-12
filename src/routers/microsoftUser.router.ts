@@ -14,6 +14,7 @@ import { Todo } from "../models/Todos.model";
 import UserTodoStatistics from "../models/userTodoStatistics.model";
 import microsoftUser from "../schema/microsoftUserSchema";
 import {
+  acceptMigrationRequest,
   alterCollection,
   getAllDomains,
   getAllUsers,
@@ -352,50 +353,19 @@ router.post(
   }
 );
 
-//RequestAccept
 router.get(
-  "/reportee-migration/:migrationId/accept",
+  "/:userId/reportee-migration/:migrationId/accept",
   async (req: Request, res: Response) => {
     try {
-      const migrationId = req.params.migrationId as string;
-      const status = "accepted";
+      const userId = req.params.userId;
+      const migrationId = req.params.migrationId;
 
-      //update status in microsoftovarride
-      const result = await updateRequestStatus(migrationId, status);
-      if (!result) {
-        res.status(400).send({ message: "failed to accept request" });
-        return;
+      const response = await acceptMigrationRequest(userId, migrationId);
+      if (response.code === 200) {
+        return res.status(response.code).send(response.message);
       }
 
-      //update reportees in microsoftusers
-      const toUserId = result?.toUserId;
-      const reportees = result?.reportees;
-      const migrationResult = await migrateReportees(toUserId, reportees);
-      if (!migrationResult) {
-        res
-          .status(400)
-          .send({ message: "Request accepted but failed to migrate" });
-        return;
-      }
-
-      const mailSubject = "Reportee migration - successfull.";
-      const mailBody =
-        "Your request has been accepted and reportees are updated.";
-      const mailRequest = "accept";
-
-      const requestAcceptResult = await sendMailRequest(
-        toUserId,
-        result._id,
-        mailSubject,
-        mailBody,
-        mailRequest
-      );
-
-      //get toUser detail
-
-      if (requestAcceptResult) {
-        return res.status(200).send("Your request has been accepted");
-      }
+      return res.status(response.code).send(response.message);
     } catch (error) {
       Rollbar.error(error as unknown as Error, req);
       res.status(500).send({ message: (error as unknown as Error).message });
