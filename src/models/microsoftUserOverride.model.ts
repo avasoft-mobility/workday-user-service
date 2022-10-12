@@ -1,7 +1,7 @@
-interface MicrosoftUserOverride {
+import MicrosoftUser from "./microsoftUser.model";
+
+interface Base {
   _id: string;
-  toUserId: string;
-  reportees: string[];
   status: string;
   mailRequestId: string;
   acknowledgedBy?: string;
@@ -13,4 +13,14 @@ interface MicrosoftUserOverride {
   __v?: number;
 }
 
-export default MicrosoftUserOverride;
+interface MicrosoftUserOverride extends Base {
+  toUserId: string;
+  reportees: string[];
+}
+
+interface PopulateMicrosoftUserOverride extends Base {
+  toUserId: MicrosoftUser;
+  reportees: MicrosoftUser[];
+}
+
+export { MicrosoftUserOverride, PopulateMicrosoftUserOverride };

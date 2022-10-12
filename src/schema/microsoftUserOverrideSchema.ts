@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import MicrosoftUserOverride from "../models/microsoftUserOverride.model";
+import {MicrosoftUserOverride} from "../models/microsoftUserOverride.model";
 
 const microsoftUsersOverrides = new mongoose.Schema(
   {

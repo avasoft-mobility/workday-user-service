@@ -3,7 +3,7 @@ import LambdaClient from "../helpers/LambdaClient";
 import { sendReporteesRequestMail } from "../helpers/SgMail";
 import AttendanceModel from "../models/Attendance.model";
 import MicrosoftUser from "../models/microsoftUser.model";
-import MicrosoftUserOverride from "../models/microsoftUserOverride.model";
+import { MicrosoftUserOverride } from "../models/microsoftUserOverride.model";
 import TeamReport from "../models/TeamReport.model";
 import microsoftUserOverrideSchema from "../schema/microsoftUserOverrideSchema";
 import microsoftUsersSchema from "../schema/microsoftUserSchema";
