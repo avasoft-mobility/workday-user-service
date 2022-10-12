@@ -20,7 +20,7 @@ import {
   getMigration,
   getMyTeamReport,
   migrateReportees,
-  requestReportees,
+  requestReporteesMigration,
   sendMailRequest,
   updateRequestStatus,
 } from "../services/microsoftUser.service";
@@ -330,72 +330,27 @@ router.get(
   }
 );
 
-//Request for reportees
-router.post("/reportee-migration", async (req: Request, res: Response) => {
-  try {
-    const requestedBody: RequestedReportees = req.body;
-    if (!requestedBody) {
-      res.status(400).send({ message: "Data is required." });
-      return;
-    }
+router.post(
+  "/:userId/reportee-migration/request",
+  async (req: Request, res: Response) => {
+    try {
+      //Below userId is not used currenlty It will be used for the future Authorization and Authentication purpose
+      const userId = req.params.userId;
+      const toUser = req.body.toUser;
+      const reportees = req.body.reportees;
 
-    const toUserId = requestedBody.toUser.userId as string;
-    const status = "requested";
-
-    const reportees = requestedBody.reportees.map((reportee: MicrosoftUser) => {
-      return reportee.userId;
-    });
-    reportees.push(requestedBody.toUser.userId);
-
-    //request for reportee migration
-    const result = await requestReportees(toUserId, reportees, status);
-    if (!result) {
-      res.status(400).send({ message: "failed to send request" });
-      return;
-    }
-
-    //mail for workday-team
-    const teamName = "Hi Team";
-    const mailSubject = "Reportee Migration Request";
-    const message = "Please find the below details for reportee migration.";
-    const mailRequest = await sendMigrationRequest(
-      teamName,
-      "request",
-      mailSubject,
-      result._id,
-      message,
-      req.body.reportees,
-      requestedBody.toUser,
-      [],
-      []
-    );
-
-    if (mailRequest) {
-      //mail for user
-      const toUserName = "Hi " + requestedBody.toUser.name;
-      const mailSubjectToUser = "Request for reportee migration - successfull";
-      const messageToUser =
-        "Please find the below details for reportee migration.";
-      const mailRequestToUser = await sendMigrationRequest(
-        toUserName,
-        "toUser",
-        mailSubjectToUser,
-        result._id,
-        messageToUser,
-        req.body.reportees,
-        requestedBody.toUser,
-        [],
-        []
-      );
-      if (mailRequestToUser) {
-        return res.status(200).send("Successfull request for migration.");
+      const response = await requestReporteesMigration(toUser, reportees);
+      if (response.code === 200) {
+        return res.status(response.code).json(response.message);
       }
+
+      return res.status(response.code).json(response.message);
+    } catch (error) {
+      Rollbar.error(error as unknown as Error, req);
+      res.status(500).send({ message: (error as unknown as Error).message });
     }
-  } catch (error) {
-    Rollbar.error(error as unknown as Error, req);
-    res.status(500).send({ message: (error as unknown as Error).message });
   }
-});
+);
 
 //RequestAccept
 router.get(
