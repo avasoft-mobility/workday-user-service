@@ -81,9 +81,7 @@ const sendMigrationRequest = async (
       }
 
       #redirectionLink {
-        display: "flex";
-        flex-Direction: "row";
-        margin-top : 15px
+        margin-top : 30px
       }
     </style>
   
@@ -91,7 +89,7 @@ const sendMigrationRequest = async (
     <h4 style="margin-bottom: 0;">${teamName},</h4>
     <p>${message}</p>
     <br>
-    <h5>To User : </h5>
+    <h5>Requested User : </h5>
     <p>Name: ${toUserDetails?.name}</p>
     <p>E-Mail: ${toUserDetails?.mail}</p>
     <p>Domain: ${toUserDetails?.practice}</p>
@@ -117,13 +115,14 @@ const sendMigrationRequest = async (
     ${
       mailRequest === "requested" || mailRequest === "acknowledged"
         ? `<div id= "redirectionLink">
-              <h4 style="margin-bottom: 0;display: inline">Click the link for acknowledgement/accept: </h4>
-              <a style="margin-bottom: 0;display: inline; margin-left: 5px" href="https://workday.avasoft.com">https://hive.avasoft.com/todo/index/html/migration/${migrationId}</a>
+              <h4 style="margin-bottom: 0;display: inline">Click the link to acknowledge / accept this request: </h4>
+              <br>
+              <a href="https://workday.avasoft.com">https://hive.avasoft.com/todo/index.html#/migration/${migrationId}</a>
             </div>`
         : ``
     }
     <div>
-    <p>Regards,</p>
+    <p style ="margin-top:50px;">Regards,</p>
     <p>WorkdayTeam</p>
   </div>   
   </body>`,
