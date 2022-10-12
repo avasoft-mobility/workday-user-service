@@ -3,7 +3,10 @@ import LambdaClient from "../helpers/LambdaClient";
 import { sendReporteesRequestMail } from "../helpers/SgMail";
 import AttendanceModel from "../models/Attendance.model";
 import MicrosoftUser from "../models/microsoftUser.model";
-import { MicrosoftUserOverride } from "../models/microsoftUserOverride.model";
+import {
+  MicrosoftUserOverride,
+  PopulateMicrosoftUserOverride,
+} from "../models/microsoftUserOverride.model";
 import MicrosoftUserOverrideExchange from "../models/MicrosoftUserOverrideExchange.model";
 import TeamReport from "../models/TeamReport.model";
 import microsoftUserOverrideSchema from "../schema/microsoftUserOverrideSchema";
@@ -301,56 +304,66 @@ const alterCollection = async (): Promise<any> => {
 };
 
 const getMigration = async (
-  userId: string,
   migrationId: string
 ): Promise<{
   code: number;
   message?: string;
-  body?: MicrosoftUserOverrideExchange;
+  body?: PopulateMicrosoftUserOverride;
 }> => {
-  if (!userId) {
-    return { code: 400, message: "User Id is required" };
-  }
-
   if (!migrationId) {
     return { code: 400, message: "Migration Id is required" };
   }
 
   const result = await microsoftUserOverrideSchema.findOne({
-    toUserId: userId,
     _id: Object(migrationId),
   });
 
   if (!result) {
     return {
       code: 404,
-      message: `Migration detail not found for this MigrationId: ${migrationId} and UserId: ${userId}`,
+      message: `Migration detail not found for this MigrationId: ${migrationId}`,
     };
   }
 
-  const reporteeIds = result.reportees;
+  let reporteeIds = result.reportees;
+  reporteeIds = reporteeIds.filter((id) => {
+    return id !== result.toUserId;
+  });
+
   const microsoftUsers = await microsoftUsersSchema.find({
     userId: { $in: reporteeIds },
   });
 
-  const OverrideUserWithReporteesObject = {
+  const toUser = await microsoftUsersSchema.findOne({
+    userId: result.toUserId,
+  });
+
+  const MicrosoftUserOverridePopulated = {
     _id: result._id,
-    toUserId: result.toUserId,
-    reportees: microsoftUsers,
+    toUser: toUser as MicrosoftUser,
+    reportees: microsoftUsers as MicrosoftUser[],
     status: result.status,
+    mailRequestId: result.mailRequestId,
+    acknowledgedBy: result.acknowledgedBy ? result.acknowledgedBy : undefined,
+    acceptedBy: result.acceptedBy ? result.acceptedBy : undefined,
+    rejectedBy: result.rejectedBy ? result.rejectedBy : undefined,
+    isActive: result.isActive,
     createdAt: result.createdAt,
     updatedAt: result.updatedAt,
     __v: result.__v,
   };
 
-  return { code: 200, body: OverrideUserWithReporteesObject };
+  return {
+    code: 200,
+    body: MicrosoftUserOverridePopulated,
+  };
 };
 
 export {
   getMyTeamReport,
-  getAllUsers, 
-  getAllDomains ,
-  requestReportees, 
+  getAllUsers,
+  getAllDomains,
+  requestReportees,
   updateRequestStatus,
   migrateReportees,
   getUserReportees,

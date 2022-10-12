@@ -315,7 +315,7 @@ router.get(
       const userId = req.params.userId as string;
       const migrationId = req.params.migrationId as string;
 
-      const response = await getMigration(userId, migrationId);
+      const response = await getMigration(migrationId);
 
       if (response.code === 200) {
         return res.status(response.code).json(response.body);
