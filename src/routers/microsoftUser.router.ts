@@ -3,7 +3,7 @@ import express, { Request, Response } from "express";
 import moment from "moment";
 import LambdaClient from "../helpers/LambdaClient";
 import { Rollbar } from "../helpers/Rollbar";
-import { sendReporteesRequestMail } from "../helpers/SgMail";
+import { sendMigrationRequest } from "../helpers/SgMail";
 import AttendanceStats from "../models/Attendance-Stats.model";
 import MicrosoftUser from "../models/microsoftUser.model";
 import MyStats from "../models/myStats.model";
@@ -358,14 +358,16 @@ router.post("/reportee-migration", async (req: Request, res: Response) => {
     const teamName = "Hi Team";
     const mailSubject = "Reportee Migration Request";
     const message = "Please find the below details for reportee migration.";
-    const mailRequest = await sendReporteesRequestMail(
+    const mailRequest = await sendMigrationRequest(
       teamName,
       "request",
       mailSubject,
       result._id,
       message,
       req.body.reportees,
-      requestedBody.toUser
+      requestedBody.toUser,
+      [],
+      []
     );
 
     if (mailRequest) {
@@ -374,14 +376,16 @@ router.post("/reportee-migration", async (req: Request, res: Response) => {
       const mailSubjectToUser = "Request for reportee migration - successfull";
       const messageToUser =
         "Please find the below details for reportee migration.";
-      const mailRequestToUser = await sendReporteesRequestMail(
+      const mailRequestToUser = await sendMigrationRequest(
         toUserName,
         "toUser",
         mailSubjectToUser,
         result._id,
         messageToUser,
         req.body.reportees,
-        requestedBody.toUser
+        requestedBody.toUser,
+        [],
+        []
       );
       if (mailRequestToUser) {
         return res.status(200).send("Successfull request for migration.");

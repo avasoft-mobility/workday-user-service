@@ -1,7 +1,7 @@
 import moment from "moment";
 import { isValidObjectId } from "mongoose";
 import LambdaClient from "../helpers/LambdaClient";
-import { sendReporteesRequestMail } from "../helpers/SgMail";
+import { sendMigrationRequest } from "../helpers/SgMail";
 import AttendanceModel from "../models/Attendance.model";
 import MicrosoftUser from "../models/microsoftUser.model";
 import {
@@ -234,16 +234,18 @@ const sendMailRequest = async (
     });
 
     //mail to user
-    const mailRequest = await sendReporteesRequestMail(
+    const mailRequest = await sendMigrationRequest(
       "Hi " + getUserDetails?.name,
       mailType,
       mailSubject,
       migrationId,
       mailBody,
       unique,
-      getUserDetails
+      getUserDetails,
+      [],
+      []
     );
-    
+
     if (mailRequest) {
       return mailRequest;
     }
@@ -366,7 +368,7 @@ const getMigration = async (
 export {
   getMyTeamReport,
   getAllUsers,
-  getAllDomains ,
+  getAllDomains,
   requestReportees,
   updateRequestStatus,
   migrateReportees,
