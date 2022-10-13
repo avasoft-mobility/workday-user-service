@@ -174,8 +174,8 @@ const acceptMigrationRequest = async (
     return { code: 400, message: "User Id is required" };
   }
 
-  const acceptedUser = await getUserById(userId);
-  if (!acceptedUser) {
+  const currentUser = await getUserById(userId);
+  if (!currentUser) {
     return { code: 404, message: "User not found" };
   }
 
@@ -210,7 +210,7 @@ const acceptMigrationRequest = async (
     {
       $set: {
         status: "accepted",
-        acceptedBy: acceptedUser.name,
+        acceptedBy: currentUser.name,
         isActive: true,
       },
     }
@@ -220,18 +220,76 @@ const acceptMigrationRequest = async (
     return { code: 400, message: "Failed to accept request" };
   }
 
-  let reportees = result.reportees;
-  reportees.push(result.toUserId);
-  reportees = [...new Set(reportees)];
+  let reporteeIds = result.reportees;
+  let reportees = await getReporteeDetails(reporteeIds);
+  reporteeIds.push(result.toUserId);
+  reporteeIds = [...new Set(reporteeIds)];
 
-  const migrationResult = await migrateReportees(result.toUserId, reportees);
+  const migrationResult = await migrateReportees(result.toUserId, reporteeIds);
   if (!migrationResult) {
     return { code: 400, message: "Request accepted but failed to migrate" };
   }
 
+  const toUser = await getUserById(result.toUserId);
+  if (!toUser) {
+    return { code: 404, message: "To user not found" };
+  }
+
+  const practiceManager = await findPracticeManager(
+    toUser.userId,
+    toUser.practice
+  );
+  if (!practiceManager) {
+    return { code: 404, message: "Practice Manger not found" };
+  }
+
+  const directManager = await findDirectManager(toUser.managerId);
+  if (!directManager) {
+    return { code: 404, message: "Practice Manger not found" };
+  }
+
+  const greetings = "Hi Team";
+  const mailType = "accepted";
   const mailSubject = "Reportee migration - successfull.";
-  const mailBody = "Your request has been accepted and reportees are updated.";
-  const mailRequest = "accept";
+  const message = "Your request has been accepted and reportees are updated.";
+  const toMails = [];
+  const ccMails = [];
+
+  toMails.push(practiceManager.mail.toLocaleLowerCase());
+  toMails.push(directManager.mail.toLocaleLowerCase());
+  ccMails.push(toUser.mail.toLocaleLowerCase());
+  ccMails.push("mobility@avasoft.com");
+
+  const mailResponse = await sendMigrationRequest(
+    greetings,
+    mailType,
+    mailSubject,
+    migrationId,
+    message,
+    reportees,
+    toUser,
+    ccMails,
+    toMails
+  );
+
+  if (!mailResponse) {
+    return {
+      code: 400,
+      message: "There is a problem in sending mail",
+    };
+  }
+
+  const updateMailRequestId =
+    await microsoftUserOverrideSchema.findByIdAndUpdate(result._id, {
+      mailRequestId: mailResponse[0].headers["x-message-id"],
+    });
+
+  if (!updateMailRequestId) {
+    return {
+      code: 400,
+      message: "Mail request Id not updated successfully",
+    };
+  }
 
   return {
     code: 200,
