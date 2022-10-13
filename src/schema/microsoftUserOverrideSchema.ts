@@ -1,19 +1,44 @@
 import mongoose from "mongoose";
-import MicrosoftUserOverride from "../models/microsoftUserOverride.model";
+import {MicrosoftUserOverride} from "../models/microsoftUserOverride.model";
 
-const microsoftUsersOverrides = new mongoose.Schema({
-  toUserId: {
-    type: String,
+const microsoftUsersOverrides = new mongoose.Schema(
+  {
+    toUserId: {
+      type: String,
+      required: true,
+    },
+    reportees: {
+      type: [String],
+      required: true,
+    },
+    status: {
+      type: String,
+      required: true,
+    },
+    mailRequestId: {
+      type: String,
+      required: true,
+    },
+    acknowledgedBy: {
+      type: String,
+    },
+    acceptedBy: {
+      type: String,
+    },
+    rejectedBy: {
+      type: String,
+    },
+    isActive: {
+      type: Boolean,
+      default: false,
+    },
   },
-  reportees: {
-    type: [String],
-  },
-  status: {
-    type: String
+  {
+    timestamps: true,
   }
-}, 
-{
-    timestamps: true
-});
+);
 
-export default mongoose.model<MicrosoftUserOverride>("microsoftusersoverride", microsoftUsersOverrides);
+export default mongoose.model<MicrosoftUserOverride>(
+  "microsoftusersoverride",
+  microsoftUsersOverrides
+);

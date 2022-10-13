@@ -1,27 +1,28 @@
 import axios from "axios";
 import express, { Request, Response } from "express";
 import moment from "moment";
+import { isValidObjectId } from "mongoose";
 import LambdaClient from "../helpers/LambdaClient";
 import { Rollbar } from "../helpers/Rollbar";
-import { sendReporteesRequestMail } from "../helpers/SgMail";
 import AttendanceStats from "../models/Attendance-Stats.model";
 import MicrosoftUser from "../models/microsoftUser.model";
 import MyStats from "../models/myStats.model";
-import RequestedReportees from "../models/RequestedReportees.model";
 import TeamStats from "../models/teamStats.model";
 import TodoStats from "../models/Todo-Stats.model";
 import { Todo } from "../models/Todos.model";
 import UserTodoStatistics from "../models/userTodoStatistics.model";
+import microsoftUserOverrideSchema from "../schema/microsoftUserOverrideSchema";
 import microsoftUser from "../schema/microsoftUserSchema";
 import {
+  acceptMigrationRequest,
   alterCollection,
   getAllDomains,
   getAllUsers,
+  getMigration,
   getMyTeamReport,
-  migrateReportees,
-  requestReportees,
-  sendMailRequest,
-  updateRequestStatus,
+  rejectMigrationRequest,
+  requestReporteesMigration,
+  updateAcknowledgementDetails,
 } from "../services/microsoftUser.service";
 import {
   exceptionalValidation,
@@ -307,112 +308,98 @@ router.get(
   }
 );
 
-//Request for reportees
-router.post("/reportee-migration", async (req: Request, res: Response) => {
-  try {
-    const requestedBody: RequestedReportees = req.body;
-    if (!requestedBody) {
-      res.status(400).send({ message: "Data is required." });
-      return;
-    }
-
-    const toUserId = requestedBody.toUser.userId as string;
-    const status = "requested";
-
-    const reportees = requestedBody.reportees.map((reportee: MicrosoftUser) => {
-      return reportee.userId;
-    });
-    reportees.push(requestedBody.toUser.userId);
-
-    //request for reportee migration
-    const result = await requestReportees(toUserId, reportees, status);
-    if (!result) {
-      res.status(400).send({ message: "failed to send request" });
-      return;
-    }
-
-    //mail for workday-team
-    const teamName = "Hi Team";
-    const mailSubject = "Reportee Migration Request";
-    const message = "Please find the below details for reportee migration.";
-    const mailRequest = await sendReporteesRequestMail(
-      teamName,
-      "request",
-      mailSubject,
-      result._id,
-      message,
-      req.body.reportees,
-      requestedBody.toUser
-    );
-
-    if (mailRequest) {
-      //mail for user
-      const toUserName = "Hi " + requestedBody.toUser.name;
-      const mailSubjectToUser = "Request for reportee migration - successfull";
-      const messageToUser =
-        "Please find the below details for reportee migration.";
-      const mailRequestToUser = await sendReporteesRequestMail(
-        toUserName,
-        "toUser",
-        mailSubjectToUser,
-        result._id,
-        messageToUser,
-        req.body.reportees,
-        requestedBody.toUser
-      );
-      if (mailRequestToUser) {
-        return res.status(200).send("Successfull request for migration.");
-      }
-    }
-  } catch (error) {
-    Rollbar.error(error as unknown as Error, req);
-    res.status(500).send({ message: (error as unknown as Error).message });
-  }
-});
-
-//RequestAccept
 router.get(
-  "/reportee-migration/:migrationId/accept",
+  "/:userId/reportee-migration/:migrationId",
   async (req: Request, res: Response) => {
     try {
+      //Below userId is not used currenlty It will be used for the future Authorization and Authentication purpose
+      const userId = req.params.userId as string;
       const migrationId = req.params.migrationId as string;
-      const status = "accepted";
 
-      //update status in microsoftovarride
-      const result = await updateRequestStatus(migrationId, status);
-      if (!result) {
-        res.status(400).send({ message: "failed to accept request" });
-        return;
+      const response = await getMigration(migrationId);
+
+      if (response.code === 200) {
+        return res.status(response.code).json(response.body);
       }
 
-      //update reportees in microsoftusers
-      const toUserId = result?.toUserId;
-      const reportees = result?.reportees;
-      const migrationResult = await migrateReportees(toUserId, reportees);
-      if (!migrationResult) {
+      return res.status(response.code).json(response.message);
+    } catch (error) {
+      Rollbar.error(error as unknown as Error, req);
+      res.status(500).send({ message: (error as unknown as Error).message });
+    }
+  }
+);
+
+router.post(
+  "/:userId/reportee-migration/request",
+  async (req: Request, res: Response) => {
+    try {
+      //Below userId is not used currenlty It will be used for the future Authorization and Authentication purpose
+      const userId = req.params.userId;
+      const toUser = req.body.toUser;
+      const reportees = req.body.reportees;
+
+      const response = await requestReporteesMigration(toUser, reportees);
+      if (response.code === 200) {
+        return res.status(response.code).json(response.message);
+      }
+
+      return res.status(response.code).json(response.message);
+    } catch (error) {
+      Rollbar.error(error as unknown as Error, req);
+      res.status(500).send({ message: (error as unknown as Error).message });
+    }
+  }
+);
+
+router.get(
+  "/:userId/reportee-migration/:migrationId/acknowledge",
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.params.userId;
+      const migrationId = req.params.migrationId;
+
+      if (!isValidObjectId(migrationId)) {
         res
           .status(400)
-          .send({ message: "Request accepted but failed to migrate" });
-        return;
+          .send({ message: "Migration Id is not a valid object Id" });
       }
 
-      const mailSubject = "Reportee migration - successfull.";
-      const mailBody =
-        "Your request has been accepted and reportees are updated.";
-      const mailRequest = "accept";
+      if (!userId) {
+        res.status(400).send({ message: "userId doesn't exist" });
+      }
 
-      const requestAcceptResult = await sendMailRequest(
-        toUserId,
-        result._id,
-        mailSubject,
-        mailBody,
-        mailRequest
+      if (!migrationId) {
+        res.status(400).send({ message: "migrationId doesn't exist" });
+      }
+
+      const users = await microsoftUser.findOne({ userId: userId });
+      if (!users) {
+        res.status(400).send({ message: "user doesn't exist for this userId" });
+      }
+
+      const migrationDetails = await microsoftUserOverrideSchema.findOne({
+        _id: migrationId,
+      });
+
+      if (!migrationDetails) {
+        res.status(400).send({
+          message: "migration Details doesn't exist for this migrationId",
+        });
+      }
+
+      if (migrationDetails?.status !== "requested") {
+        res
+          .status(400)
+          .send({ message: "The migration should be in requested status" });
+      }
+
+      const result = await updateAcknowledgementDetails(
+        users!,
+        migrationDetails!
       );
-
-      //get toUser detail
-
-      if (requestAcceptResult) {
-        return res.status(200).send("Your request has been accepted");
+      if (result) {
+        return res.status(result.code).send(result?.message);
       }
     } catch (error) {
       Rollbar.error(error as unknown as Error, req);
@@ -421,34 +408,39 @@ router.get(
   }
 );
 
-//RequestReject
 router.get(
-  "/reportee-migration/:migrationId/reject",
+  "/:userId/reportee-migration/:migrationId/accept",
   async (req: Request, res: Response) => {
     try {
-      const migrationId = req.params.migrationId as string;
-      const status = "rejected";
-      const result = await updateRequestStatus(migrationId, status);
-      if (!result) {
-        res.status(400).send({ message: "failed to reject request" });
-        return;
+      const userId = req.params.userId;
+      const migrationId = req.params.migrationId;
+
+      const response = await acceptMigrationRequest(userId, migrationId);
+      if (response.code === 200) {
+        return res.status(response.code).send(response.message);
       }
 
-      const mailSubject = "Reportee migration - Rejected.";
-      const mailBody =
-        "Your request for migration of reportees is been rejected.";
-      const mailRequest = "accept";
+      return res.status(response.code).send(response.message);
+    } catch (error) {
+      Rollbar.error(error as unknown as Error, req);
+      res.status(500).send({ message: (error as unknown as Error).message });
+    }
+  }
+);
 
-      const requestAcceptResult = await sendMailRequest(
-        result.toUserId,
-        result._id,
-        mailSubject,
-        mailBody,
-        mailRequest
-      );
-      if (requestAcceptResult) {
-        return res.status(200).send("Your request has been rejected.");
+router.get(
+  "/:userId/reportee-migration/:migrationId/reject",
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.params.userId;
+      const migrationId = req.params.migrationId;
+
+      const response = await rejectMigrationRequest(userId, migrationId);
+      if (response.code === 200) {
+        return res.status(response.code).send(response.message);
       }
+
+      return res.status(response.code).send(response.message);
     } catch (error) {
       Rollbar.error(error as unknown as Error, req);
       res.status(500).send({ message: (error as unknown as Error).message });
