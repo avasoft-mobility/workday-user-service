@@ -695,8 +695,9 @@ const updateAcknowledgementDetails = async (
     }
   );
 
-  const mailSubject = "Manager Acknowledgement - successfull.";
-  const mailBody = "The manager has acknowledged the request";
+  const mailSubject = `Migration Request ${migrationDetails._id} - Acknowledged`;
+  const mailBody =
+    "This request has been acknowledged by the manager. @Workday Admin, please accept this request.";
   const mailType = "acknowledged";
   const ccMailIds: string[] = [];
   ccMailIds.push(user.mail);
@@ -705,23 +706,32 @@ const updateAcknowledgementDetails = async (
     userId: { $in: migrationDetails.reportees },
   });
 
-  const userManager: MicrosoftUser[] = await microsoftUsersSchema.find({
+  const userManager: MicrosoftUser | null = await microsoftUsersSchema.findOne({
     userId: user.managerId,
   });
 
-  if (userManager) {
-    ccMailIds.push(userManager[0].mail);
+  if (!userManager) {
+    return {
+      status: 400,
+      message: "There is a no managerId for this requested person",
+    };
   }
+  ccMailIds.push(userManager.mail);
 
-  const userPracticeHead: MicrosoftUser[] = await microsoftUsersSchema.find({
-    reportings: user.userId,
-    role: "Practice Head",
-    practice: user.practice,
-  });
+  const userPracticeHead: MicrosoftUser | null =
+    await microsoftUsersSchema.findOne({
+      reportings: user.userId,
+      role: "Practice Head",
+      practice: user.practice,
+    });
 
-  if (userPracticeHead) {
-    ccMailIds.push(userPracticeHead[0].mail);
+  if (!userPracticeHead) {
+    return {
+      status: 400,
+      message: "There is a no practiceHeadId for this requested person",
+    };
   }
+  ccMailIds.push(userPracticeHead.mail);
 
   const mailRequest = await sendMigrationRequest(
     "Hi Workday Team",
@@ -734,24 +744,23 @@ const updateAcknowledgementDetails = async (
     ccMailIds,
     ["mobility@avasoft.com"]
   );
-  if (mailRequest) {
-    const response = await microsoftUserOverrideSchema.findByIdAndUpdate(
-      migrationDetails._id,
-      {
-        mailRequestId: mailRequest[0].headers["x-message-id"],
-      }
-    );
-    return {
-      status: 200,
-      message: "Your request has been Acknowledged.",
-    };
-  }
+
   if (!mailRequest) {
     return {
       status: 400,
       message: "There is a problem in sending mail request",
     };
   }
+  const result = await microsoftUserOverrideSchema.findByIdAndUpdate(
+    migrationDetails._id,
+    {
+      mailRequestId: mailRequest[0].headers["x-message-id"],
+    }
+  );
+  return {
+    status: 200,
+    message: "Your request has been Acknowledged.",
+  };
 };
 
 export {
