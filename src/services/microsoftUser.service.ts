@@ -136,18 +136,299 @@ const getAllUsers = async (): Promise<TeamReport[]> => {
   return allUsers;
 };
 
-const getUserById = async (id: String): Promise<MicrosoftUser> => {
-  const queryResult = await microsoftUsersSchema.findOne({
-    userId: id,
-  });
-  return queryResult as MicrosoftUser;
-};
-
 const getAllDomains = async (): Promise<string[]> => {
   const allDomains = (await microsoftUsersSchema.distinct(
     "practice"
   )) as string[];
   return allDomains;
+};
+
+const alterCollection = async (): Promise<any> => {
+  const params = new URLSearchParams();
+  params.append("client_id", "d9aa0b7c-c26e-49e9-8c9e-dcbd94a17947");
+  params.append("scope", "https://graph.microsoft.com/.default");
+  params.append("client_secret", "dEr8Q~pqBvfbaFn7tUjSv6i_SP6_zMY4.vHZSdcX");
+  params.append("grant_type", "client_credentials");
+
+  const tokenResponse = await axios.post(
+    "https://login.microsoftonline.com/716f83c3-7abd-42a1-86d2-e0207f4aa981/oauth2/v2.0/token",
+    params
+  );
+
+  const config = {
+    headers: { Authorization: `Bearer ${tokenResponse.data.access_token}` },
+  };
+
+  const users = await microsoftUsersSchema.find();
+
+  const result: any = [];
+  for (const user of users) {
+    let response: any;
+
+    try {
+      response = await axios.get(
+        `https://graph.microsoft.com/v1.0/users/${user.userId}?$select=displayName,employeeId&$expand=manager($select=id,displayName)`,
+        config
+      );
+
+      result.push({
+        userId: user.userId,
+        name: user.name,
+        role: user.role,
+        practice: user.practice,
+        mail: user.mail,
+        managerId: response.data.manager ? response.data.manager.id : "Manager",
+        employeeId: response.data.employeeId,
+        reportings: user.reportings,
+      });
+    } catch (error: any) {
+      console.log(error.response.config.url);
+    }
+  }
+
+  const deleteManyResponse = await microsoftUsersSchema.deleteMany();
+
+  if (deleteManyResponse) {
+    const createResponse = await microsoftUsersSchema.create(result);
+    return createResponse;
+  }
+
+  return { message: "Table drop error" };
+};
+
+const getMigration = async (
+  migrationId: string
+): Promise<{
+  code: number;
+  message?: string;
+  body?: PopulateMicrosoftUserOverride;
+}> => {
+  if (!migrationId) {
+    return { code: 400, message: "Migration Id is required" };
+  }
+
+  if (!isValidObjectId(migrationId)) {
+    return { code: 400, message: "Migration Id is not valid" };
+  }
+
+  const result = await microsoftUserOverrideSchema.findOne({
+    _id: Object(migrationId),
+  });
+
+  if (!result) {
+    return {
+      code: 404,
+      message: `Migration detail not found for this MigrationId: ${migrationId}`,
+    };
+  }
+
+  let reporteeIds = result.reportees;
+  reporteeIds = reporteeIds.filter((id) => {
+    return id !== result.toUserId;
+  });
+
+  const microsoftUsers = await microsoftUsersSchema.find({
+    userId: { $in: reporteeIds },
+  });
+
+  const toUser = await microsoftUsersSchema.findOne({
+    userId: result.toUserId,
+  });
+
+  const MicrosoftUserOverridePopulated = {
+    _id: result._id,
+    toUser: toUser as MicrosoftUser,
+    reportees: microsoftUsers as MicrosoftUser[],
+    status: result.status,
+    mailRequestId: result.mailRequestId,
+    acknowledgedBy: result.acknowledgedBy ? result.acknowledgedBy : undefined,
+    acceptedBy: result.acceptedBy ? result.acceptedBy : undefined,
+    rejectedBy: result.rejectedBy ? result.rejectedBy : undefined,
+    isActive: result.isActive,
+    createdAt: result.createdAt,
+    updatedAt: result.updatedAt,
+    __v: result.__v,
+  };
+
+  return {
+    code: 200,
+    body: MicrosoftUserOverridePopulated,
+  };
+};
+
+const requestReporteesMigration = async (
+  toUser: MicrosoftUser,
+  reportees: MicrosoftUser[]
+): Promise<{
+  code: number;
+  message?: string;
+  body?: MicrosoftUserOverride;
+}> => {
+  if (!toUser) {
+    return { code: 400, message: "To user is required" };
+  }
+
+  if (!(reportees.length > 0)) {
+    return { code: 400, message: "Reportees is required" };
+  }
+
+  const toUserId = toUser.userId as string;
+  const status = "requested";
+  let reporteeIds = reportees.map((reportee: MicrosoftUser) => {
+    return reportee.userId;
+  });
+
+  reporteeIds = reporteeIds.filter((id) => {
+    return id !== toUserId;
+  });
+
+  reporteeIds = [...new Set(reporteeIds)];
+
+  const result = await microsoftUserOverrideSchema.create({
+    toUserId: toUserId,
+    reportees: reporteeIds,
+    status: status,
+  });
+
+  if (!result) {
+    return { code: 400, message: "Creating migration data failed" };
+  }
+
+  const practiceManager = await findPracticeManager(toUserId, toUser.practice);
+  if (!practiceManager) {
+    return { code: 404, message: "Practice Manger not found" };
+  }
+
+  const directManager = await findDirectManager(toUser.managerId);
+  if (!directManager) {
+    return { code: 404, message: "Practice Manger not found" };
+  }
+
+  const greetings = "Hi Team";
+  const mailType = "requested";
+  const mailSubject = "Reportee Migration Request";
+  const migrationId = result._id;
+  const message = "Please find the below details for reportee migration.";
+  const toMails = [];
+  const ccMails = [];
+
+  toMails.push(practiceManager.mail.toLocaleLowerCase());
+  toMails.push(directManager.mail.toLocaleLowerCase());
+  ccMails.push(toUser.mail.toLocaleLowerCase());
+  ccMails.push("mobility@avasoft.com");
+
+  const mailResponse = await sendMigrationRequest(
+    greetings,
+    mailType,
+    mailSubject,
+    migrationId,
+    message,
+    reportees,
+    toUser,
+    ccMails,
+    toMails
+  );
+
+  if (!mailResponse) {
+    return {
+      code: 400,
+      message: "There is a problem in sending mail",
+    };
+  }
+
+  const updateMailRequestId =
+    await microsoftUserOverrideSchema.findByIdAndUpdate(result._id, {
+      mailRequestId: mailResponse[0].headers["x-message-id"],
+    });
+
+  if (!updateMailRequestId) {
+    return {
+      code: 400,
+      message: "Mail request Id not updated successfully",
+    };
+  }
+
+  return { code: 200, message: "Migration request successful" };
+};
+
+const updateAcknowledgementDetails = async (
+  user: MicrosoftUser,
+  migrationDetails: MicrosoftUserOverride
+): Promise<{
+  code: number;
+  message?: string;
+  body?: MicrosoftUserOverride;
+}> => {
+  const response = await microsoftUserOverrideSchema.findByIdAndUpdate(
+    migrationDetails._id,
+    {
+      status: "acknowledged",
+      acknowledgedBy: user.name,
+    }
+  );
+
+  const mailSubject = `Migration Request ${migrationDetails._id} - Acknowledged`;
+  const mailBody =
+    "This request has been acknowledged by the manager. @Workday Admin, please accept this request.";
+  const mailType = "acknowledged";
+  const ccMailIds: string[] = [];
+  ccMailIds.push(user.mail);
+
+  const reporteeDetails: MicrosoftUser[] = await microsoftUsersSchema.find({
+    userId: { $in: migrationDetails.reportees },
+  });
+
+  const directManager = await findDirectManager(user.managerId);
+
+  if (!directManager) {
+    return {
+      code: 400,
+      message: "There is a no managerId for this requested person",
+    };
+  }
+  ccMailIds.push(directManager.mail);
+
+  const userPracticeHead = await findPracticeManager(
+    user.userId,
+    user.practice
+  );
+
+  if (!userPracticeHead) {
+    return {
+      code: 400,
+      message: "There is a no practiceHeadId for this requested person",
+    };
+  }
+  ccMailIds.push(userPracticeHead.mail);
+
+  const mailRequest = await sendMigrationRequest(
+    "Hi Workday Team",
+    mailType,
+    mailSubject,
+    migrationDetails._id,
+    mailBody,
+    reporteeDetails,
+    user,
+    ccMailIds,
+    ["mobility@avasoft.com"]
+  );
+
+  if (!mailRequest) {
+    return {
+      code: 400,
+      message: "There is a problem in sending mail request",
+    };
+  }
+  const result = await microsoftUserOverrideSchema.findByIdAndUpdate(
+    migrationDetails._id,
+    {
+      mailRequestId: mailRequest[0].headers["x-message-id"],
+    }
+  );
+  return {
+    code: 200,
+    message: "Your request has been Acknowledged.",
+  };
 };
 
 const acceptMigrationRequest = async (
@@ -436,236 +717,6 @@ const rejectMigrationRequest = async (
   };
 };
 
-const migrateReportees = async (
-  toUserId: string,
-  reportees: string[]
-): Promise<MicrosoftUser> => {
-  const response = await microsoftUsersSchema.findOneAndUpdate(
-    { userId: toUserId },
-    { $set: { reportings: reportees } }
-  );
-
-  return response as MicrosoftUser;
-};
-
-const getReporteeDetails = async (
-  reporteesId: string[]
-): Promise<MicrosoftUser[]> => {
-  const response = await microsoftUsersSchema.find({
-    userId: { $in: reporteesId },
-  });
-
-  return response;
-};
-
-const alterCollection = async (): Promise<any> => {
-  const params = new URLSearchParams();
-  params.append("client_id", "d9aa0b7c-c26e-49e9-8c9e-dcbd94a17947");
-  params.append("scope", "https://graph.microsoft.com/.default");
-  params.append("client_secret", "dEr8Q~pqBvfbaFn7tUjSv6i_SP6_zMY4.vHZSdcX");
-  params.append("grant_type", "client_credentials");
-
-  const tokenResponse = await axios.post(
-    "https://login.microsoftonline.com/716f83c3-7abd-42a1-86d2-e0207f4aa981/oauth2/v2.0/token",
-    params
-  );
-
-  const config = {
-    headers: { Authorization: `Bearer ${tokenResponse.data.access_token}` },
-  };
-
-  const users = await microsoftUsersSchema.find();
-
-  const result: any = [];
-  for (const user of users) {
-    let response: any;
-
-    try {
-      response = await axios.get(
-        `https://graph.microsoft.com/v1.0/users/${user.userId}?$select=displayName,employeeId&$expand=manager($select=id,displayName)`,
-        config
-      );
-
-      result.push({
-        userId: user.userId,
-        name: user.name,
-        role: user.role,
-        practice: user.practice,
-        mail: user.mail,
-        managerId: response.data.manager ? response.data.manager.id : "Manager",
-        employeeId: response.data.employeeId,
-        reportings: user.reportings,
-      });
-    } catch (error: any) {
-      console.log(error.response.config.url);
-    }
-  }
-
-  const deleteManyResponse = await microsoftUsersSchema.deleteMany();
-
-  if (deleteManyResponse) {
-    const createResponse = await microsoftUsersSchema.create(result);
-    return createResponse;
-  }
-
-  return { message: "Table drop error" };
-};
-
-const getMigration = async (
-  migrationId: string
-): Promise<{
-  code: number;
-  message?: string;
-  body?: PopulateMicrosoftUserOverride;
-}> => {
-  if (!migrationId) {
-    return { code: 400, message: "Migration Id is required" };
-  }
-
-  if (!isValidObjectId(migrationId)) {
-    return { code: 400, message: "Migration Id is not valid" };
-  }
-
-  const result = await microsoftUserOverrideSchema.findOne({
-    _id: Object(migrationId),
-  });
-
-  if (!result) {
-    return {
-      code: 404,
-      message: `Migration detail not found for this MigrationId: ${migrationId}`,
-    };
-  }
-
-  let reporteeIds = result.reportees;
-  reporteeIds = reporteeIds.filter((id) => {
-    return id !== result.toUserId;
-  });
-
-  const microsoftUsers = await microsoftUsersSchema.find({
-    userId: { $in: reporteeIds },
-  });
-
-  const toUser = await microsoftUsersSchema.findOne({
-    userId: result.toUserId,
-  });
-
-  const MicrosoftUserOverridePopulated = {
-    _id: result._id,
-    toUser: toUser as MicrosoftUser,
-    reportees: microsoftUsers as MicrosoftUser[],
-    status: result.status,
-    mailRequestId: result.mailRequestId,
-    acknowledgedBy: result.acknowledgedBy ? result.acknowledgedBy : undefined,
-    acceptedBy: result.acceptedBy ? result.acceptedBy : undefined,
-    rejectedBy: result.rejectedBy ? result.rejectedBy : undefined,
-    isActive: result.isActive,
-    createdAt: result.createdAt,
-    updatedAt: result.updatedAt,
-    __v: result.__v,
-  };
-
-  return {
-    code: 200,
-    body: MicrosoftUserOverridePopulated,
-  };
-};
-
-const requestReporteesMigration = async (
-  toUser: MicrosoftUser,
-  reportees: MicrosoftUser[]
-): Promise<{
-  code: number;
-  message?: string;
-  body?: MicrosoftUserOverride;
-}> => {
-  if (!toUser) {
-    return { code: 400, message: "To user is required" };
-  }
-
-  if (!(reportees.length > 0)) {
-    return { code: 400, message: "Reportees is required" };
-  }
-
-  const toUserId = toUser.userId as string;
-  const status = "requested";
-  let reporteeIds = reportees.map((reportee: MicrosoftUser) => {
-    return reportee.userId;
-  });
-
-  reporteeIds = reporteeIds.filter((id) => {
-    return id !== toUserId;
-  });
-
-  reporteeIds = [...new Set(reporteeIds)];
-
-  const result = await microsoftUserOverrideSchema.create({
-    toUserId: toUserId,
-    reportees: reporteeIds,
-    status: status,
-  });
-
-  if (!result) {
-    return { code: 400, message: "Creating migration data failed" };
-  }
-
-  const practiceManager = await findPracticeManager(toUserId, toUser.practice);
-  if (!practiceManager) {
-    return { code: 404, message: "Practice Manger not found" };
-  }
-
-  const directManager = await findDirectManager(toUser.managerId);
-  if (!directManager) {
-    return { code: 404, message: "Practice Manger not found" };
-  }
-
-  const greetings = "Hi Team";
-  const mailType = "requested";
-  const mailSubject = "Reportee Migration Request";
-  const migrationId = result._id;
-  const message = "Please find the below details for reportee migration.";
-  const toMails = [];
-  const ccMails = [];
-
-  toMails.push(practiceManager.mail.toLocaleLowerCase());
-  toMails.push(directManager.mail.toLocaleLowerCase());
-  ccMails.push(toUser.mail.toLocaleLowerCase());
-  ccMails.push("mobility@avasoft.com");
-
-  const mailResponse = await sendMigrationRequest(
-    greetings,
-    mailType,
-    mailSubject,
-    migrationId,
-    message,
-    reportees,
-    toUser,
-    ccMails,
-    toMails
-  );
-
-  if (!mailResponse) {
-    return {
-      code: 400,
-      message: "There is a problem in sending mail",
-    };
-  }
-
-  const updateMailRequestId =
-    await microsoftUserOverrideSchema.findByIdAndUpdate(result._id, {
-      mailRequestId: mailResponse[0].headers["x-message-id"],
-    });
-
-  if (!updateMailRequestId) {
-    return {
-      code: 400,
-      message: "Mail request Id not updated successfully",
-    };
-  }
-
-  return { code: 200, message: "Migration request successful" };
-};
-
 const findPracticeManager = async (
   userId: string,
   userPractice: string
@@ -683,84 +734,33 @@ const findDirectManager = async (managerId: string): Promise<MicrosoftUser> => {
   return result as MicrosoftUser;
 };
 
-const updateAcknowledgementDetails = async (
-  user: MicrosoftUser,
-  migrationDetails: MicrosoftUserOverride
-): Promise<{
-  code: number;
-  message?: string;
-  body?: MicrosoftUserOverride;
-}> => {
-  const response = await microsoftUserOverrideSchema.findByIdAndUpdate(
-    migrationDetails._id,
-    {
-      status: "acknowledged",
-      acknowledgedBy: user.name,
-    }
-  );
-
-  const mailSubject = `Migration Request ${migrationDetails._id} - Acknowledged`;
-  const mailBody =
-    "This request has been acknowledged by the manager. @Workday Admin, please accept this request.";
-  const mailType = "acknowledged";
-  const ccMailIds: string[] = [];
-  ccMailIds.push(user.mail);
-
-  const reporteeDetails: MicrosoftUser[] = await microsoftUsersSchema.find({
-    userId: { $in: migrationDetails.reportees },
+const getReporteeDetails = async (
+  reporteesId: string[]
+): Promise<MicrosoftUser[]> => {
+  const response = await microsoftUsersSchema.find({
+    userId: { $in: reporteesId },
   });
 
-  const directManager = await findDirectManager(user.managerId);
+  return response;
+};
 
-  if (!directManager) {
-    return {
-      code: 400,
-      message: "There is a no managerId for this requested person",
-    };
-  }
-  ccMailIds.push(directManager.mail);
-
-  const userPracticeHead = await findPracticeManager(
-    user.userId,
-    user.practice
+const migrateReportees = async (
+  toUserId: string,
+  reportees: string[]
+): Promise<MicrosoftUser> => {
+  const response = await microsoftUsersSchema.findOneAndUpdate(
+    { userId: toUserId },
+    { $set: { reportings: reportees } }
   );
 
-  if (!userPracticeHead) {
-    return {
-      code: 400,
-      message: "There is a no practiceHeadId for this requested person",
-    };
-  }
-  ccMailIds.push(userPracticeHead.mail);
+  return response as MicrosoftUser;
+};
 
-  const mailRequest = await sendMigrationRequest(
-    "Hi Workday Team",
-    mailType,
-    mailSubject,
-    migrationDetails._id,
-    mailBody,
-    reporteeDetails,
-    user,
-    ccMailIds,
-    ["mobility@avasoft.com"]
-  );
-
-  if (!mailRequest) {
-    return {
-      code: 400,
-      message: "There is a problem in sending mail request",
-    };
-  }
-  const result = await microsoftUserOverrideSchema.findByIdAndUpdate(
-    migrationDetails._id,
-    {
-      mailRequestId: mailRequest[0].headers["x-message-id"],
-    }
-  );
-  return {
-    code: 200,
-    message: "Your request has been Acknowledged.",
-  };
+const getUserById = async (id: String): Promise<MicrosoftUser> => {
+  const queryResult = await microsoftUsersSchema.findOne({
+    userId: id,
+  });
+  return queryResult as MicrosoftUser;
 };
 
 export {

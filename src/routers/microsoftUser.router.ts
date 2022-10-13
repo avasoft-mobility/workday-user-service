@@ -353,56 +353,16 @@ router.post(
 );
 
 router.get(
-  "/:userId/reportee-migration/:migrationId/accept",
-  async (req: Request, res: Response) => {
-    try {
-      const userId = req.params.userId;
-      const migrationId = req.params.migrationId;
-
-      const response = await acceptMigrationRequest(userId, migrationId);
-      if (response.code === 200) {
-        return res.status(response.code).send(response.message);
-      }
-
-      return res.status(response.code).send(response.message);
-    } catch (error) {
-      Rollbar.error(error as unknown as Error, req);
-      res.status(500).send({ message: (error as unknown as Error).message });
-    }
-  }
-);
-
-router.get(
-  "/:userId/reportee-migration/:migrationId/reject",
-  async (req: Request, res: Response) => {
-    try {
-      const userId = req.params.userId;
-      const migrationId = req.params.migrationId;
-
-      const response = await rejectMigrationRequest(userId, migrationId);
-      if (response.code === 200) {
-        return res.status(response.code).send(response.message);
-      }
-
-      return res.status(response.code).send(response.message);
-    } catch (error) {
-      Rollbar.error(error as unknown as Error, req);
-      res.status(500).send({ message: (error as unknown as Error).message });
-    }
-  }
-);
-
-router.get(
   "/:userId/reportee-migration/:migrationId/acknowledge",
   async (req: Request, res: Response) => {
     try {
-      const migrationId = req.params.migrationId;
       const userId = req.params.userId;
+      const migrationId = req.params.migrationId;
 
       if (!isValidObjectId(migrationId)) {
         res
           .status(400)
-          .send({ message: "migrationId is not a valid object Id" });
+          .send({ message: "Migration Id is not a valid object Id" });
       }
 
       if (!userId) {
@@ -441,6 +401,46 @@ router.get(
       if (result) {
         return res.status(result.code).send(result?.message);
       }
+    } catch (error) {
+      Rollbar.error(error as unknown as Error, req);
+      res.status(500).send({ message: (error as unknown as Error).message });
+    }
+  }
+);
+
+router.get(
+  "/:userId/reportee-migration/:migrationId/accept",
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.params.userId;
+      const migrationId = req.params.migrationId;
+
+      const response = await acceptMigrationRequest(userId, migrationId);
+      if (response.code === 200) {
+        return res.status(response.code).send(response.message);
+      }
+
+      return res.status(response.code).send(response.message);
+    } catch (error) {
+      Rollbar.error(error as unknown as Error, req);
+      res.status(500).send({ message: (error as unknown as Error).message });
+    }
+  }
+);
+
+router.get(
+  "/:userId/reportee-migration/:migrationId/reject",
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.params.userId;
+      const migrationId = req.params.migrationId;
+
+      const response = await rejectMigrationRequest(userId, migrationId);
+      if (response.code === 200) {
+        return res.status(response.code).send(response.message);
+      }
+
+      return res.status(response.code).send(response.message);
     } catch (error) {
       Rollbar.error(error as unknown as Error, req);
       res.status(500).send({ message: (error as unknown as Error).message });
