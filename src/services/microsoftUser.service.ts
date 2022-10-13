@@ -1,7 +1,7 @@
 import moment from "moment";
 import { isValidObjectId } from "mongoose";
 import LambdaClient from "../helpers/LambdaClient";
-import { sendMigrationRequest } from "../helpers/SgMail";
+import { sendMigrationMail } from "../helpers/SgMail";
 import AttendanceModel from "../models/Attendance.model";
 import MicrosoftUser from "../models/microsoftUser.model";
 import {
@@ -317,7 +317,7 @@ const requestReporteesMigration = async (
   ccMails.push(toUser.mail.toLocaleLowerCase());
   ccMails.push("mobility@avasoft.com");
 
-  const mailResponse = await sendMigrationRequest(
+  const mailResponse = await sendMigrationMail(
     greetings,
     mailType,
     mailSubject,
@@ -401,7 +401,7 @@ const updateAcknowledgementDetails = async (
   }
   ccMailIds.push(userPracticeHead.mail);
 
-  const mailRequest = await sendMigrationRequest(
+  const mailRequest = await sendMigrationMail(
     "Hi Workday Team",
     mailType,
     mailSubject,
@@ -545,7 +545,7 @@ const acceptMigrationRequest = async (
   ccMails.push(directManager.mail.toLocaleLowerCase());
   ccMails.push("mobility@avasoft.com");
 
-  const mailResponse = await sendMigrationRequest(
+  const mailResponse = await sendMigrationMail(
     greetings,
     mailType,
     mailSubject,
@@ -680,7 +680,7 @@ const rejectMigrationRequest = async (
   ccMails.push(directManager.mail.toLocaleLowerCase());
   ccMails.push("mobility@avasoft.com");
 
-  const mailResponse = await sendMigrationRequest(
+  const mailResponse = await sendMigrationMail(
     greetings,
     mailType,
     mailSubject,

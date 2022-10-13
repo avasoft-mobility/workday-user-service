@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const sendMigrationRequest = async (
+const sendMigrationMail = async (
   teamName: string,
   mailRequest: string,
   mailSubject: string,
@@ -132,4 +132,4 @@ const sendMigrationRequest = async (
   return result;
 };
 
-export { sendMigrationRequest };
+export { sendMigrationMail };
