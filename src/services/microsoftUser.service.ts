@@ -706,24 +706,20 @@ const updateAcknowledgementDetails = async (
     userId: { $in: migrationDetails.reportees },
   });
 
-  const userManager: MicrosoftUser | null = await microsoftUsersSchema.findOne({
-    userId: user.managerId,
-  });
+  const directManager = await findDirectManager(user.managerId);
 
-  if (!userManager) {
+  if (!directManager) {
     return {
       status: 400,
       message: "There is a no managerId for this requested person",
     };
   }
-  ccMailIds.push(userManager.mail);
+  ccMailIds.push(directManager.mail);
 
-  const userPracticeHead: MicrosoftUser | null =
-    await microsoftUsersSchema.findOne({
-      reportings: user.userId,
-      role: "Practice Head",
-      practice: user.practice,
-    });
+  const userPracticeHead = await findPracticeManager(
+    user.userId,
+    user.practice
+  );
 
   if (!userPracticeHead) {
     return {
@@ -741,8 +737,8 @@ const updateAcknowledgementDetails = async (
     mailBody,
     reporteeDetails,
     user,
-    ccMailIds,
-    ["mobility@avasoft.com"]
+    ["jiju.s@avasoft.com"],
+    ["Ragul.ra@avasoft.com"]
   );
 
   if (!mailRequest) {
