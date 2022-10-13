@@ -266,7 +266,7 @@ const acceptMigrationRequest = async (
 
   const greetings = "Hi Team";
   const mailType = "accepted";
-  const mailSubject = `Reportee migration - [#${migrationId}] - accepted`;
+  const mailSubject = `Reportee migration - [#${migrationId}] - Accepted`;
   const message = "Your request has been accepted and reportees are updated.";
   const toMails = [];
   const ccMails = [];
