@@ -393,49 +393,6 @@ router.get(
 );
 
 router.get(
-  "/:userId/reportee-migration/:migrationId/acknowledged",
-  async (req: Request, res: Response) => {
-    try {
-      const migrationId = req.params.migrationId;
-      const userId = req.params.userId;
-
-      if (!userId) {
-        res.status(400).send({ message: "userId doesn't exist" });
-      }
-
-      if (!migrationId) {
-        res.status(400).send({ message: "migrationId doesn't exist" });
-      }
-
-      const users = await microsoftUser.findOne({ userId: userId });
-      if (!users) {
-        res.status(400).send({ message: "user doesn't exist for this userId" });
-      }
-
-      const migrationDetails = await microsoftUserOverrideSchema.findOne({
-        _id: migrationId,
-      });
-
-      if (!migrationDetails) {
-        res.status(400).send({
-          message: "migration Details doesn't exist for this migrationId",
-        });
-      }
-      const result = await updateAcknowledgementDetails(
-        users!,
-        migrationDetails!
-      );
-      if (result) {
-        return res.status(result.status).send(result?.message);
-      }
-    } catch (error) {
-      Rollbar.error(error as unknown as Error, req);
-      res.status(500).send({ message: (error as unknown as Error).message });
-    }
-  }
-);
-
-router.get(
   "/:userId/reportee-migration/:migrationId/acknowledge",
   async (req: Request, res: Response) => {
     try {
