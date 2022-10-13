@@ -373,6 +373,11 @@ const updateAcknowledgementDetails = async (
   const ccMailIds: string[] = [];
   ccMailIds.push(user.mail);
 
+  const requestedUser: MicrosoftUser | null =
+    await microsoftUsersSchema.findOne({
+      userId: migrationDetails.toUserId,
+    });
+
   const reporteeDetails: MicrosoftUser[] = await microsoftUsersSchema.find({
     userId: { $in: migrationDetails.reportees },
   });
@@ -402,7 +407,7 @@ const updateAcknowledgementDetails = async (
     migrationDetails._id,
     mailBody,
     reporteeDetails,
-    user,
+    requestedUser!,
     ccMailIds,
     ["mobility@avasoft.com"]
   );

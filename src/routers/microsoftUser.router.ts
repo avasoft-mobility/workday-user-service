@@ -360,22 +360,24 @@ router.get(
       const migrationId = req.params.migrationId;
 
       if (!isValidObjectId(migrationId)) {
-        res
+        return res
           .status(400)
           .send({ message: "Migration Id is not a valid object Id" });
       }
 
       if (!userId) {
-        res.status(400).send({ message: "userId doesn't exist" });
+        return res.status(400).send({ message: "userId doesn't exist" });
       }
 
       if (!migrationId) {
-        res.status(400).send({ message: "migrationId doesn't exist" });
+        return res.status(400).send({ message: "migrationId doesn't exist" });
       }
 
       const users = await microsoftUser.findOne({ userId: userId });
       if (!users) {
-        res.status(400).send({ message: "user doesn't exist for this userId" });
+        return res
+          .status(400)
+          .send({ message: "user doesn't exist for this userId" });
       }
 
       const migrationDetails = await microsoftUserOverrideSchema.findOne({
@@ -383,13 +385,22 @@ router.get(
       });
 
       if (!migrationDetails) {
-        res.status(400).send({
+        return res.status(400).send({
           message: "migration Details doesn't exist for this migrationId",
         });
       }
 
-      if (migrationDetails?.status !== "requested") {
-        res
+      if (migrationDetails?.status === "acknowledged") {
+        return res.status(400).send({
+          message: "This migration has already in acknowledged status",
+        });
+      }
+
+      if (
+        migrationDetails?.status === "accepted" ||
+        migrationDetails?.status === "rejected"
+      ) {
+        return res
           .status(400)
           .send({ message: "The migration should be in requested status" });
       }
