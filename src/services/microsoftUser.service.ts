@@ -274,15 +274,31 @@ const requestReporteesMigration = async (
 
   const toUserId = toUser.userId as string;
   const status = "requested";
+
+  reportees = reportees.filter(
+    (value, index, self) =>
+      index === self.findIndex((t) => t.userId === value.userId)
+  );
+  reportees = reportees.filter((reportee) => {
+    return reportee.userId !== toUserId;
+  });
+
   let reporteeIds = reportees.map((reportee: MicrosoftUser) => {
     return reportee.userId;
   });
 
-  reporteeIds = reporteeIds.filter((id) => {
+  let toUserReportees = toUser.reportings;
+  toUserReportees = toUserReportees.filter((id) => {
     return id !== toUserId;
   });
 
-  reporteeIds = [...new Set(reporteeIds)];
+  if (reporteeIds.sort().join("") === toUserReportees.sort().join("")) {
+    return {
+      code: 400,
+      message:
+        "Migration request failed due to requesting for the same reporting details",
+    };
+  }
 
   const result = await microsoftUserOverrideSchema.create({
     toUserId: toUserId,
@@ -505,9 +521,9 @@ const acceptMigrationRequest = async (
   }
 
   let reporteeIds = result.reportees;
+  reporteeIds = [...new Set(reporteeIds)];
   let reportees = await getReporteeDetails(reporteeIds);
   reporteeIds.push(result.toUserId);
-  reporteeIds = [...new Set(reporteeIds)];
 
   const migrationResult = await migrateReportees(result.toUserId, reporteeIds);
   if (!migrationResult) {
@@ -645,6 +661,7 @@ const rejectMigrationRequest = async (
   }
 
   let reporteeIds = result.reportees;
+  reporteeIds = [...new Set(reporteeIds)];
   let reportees = await getReporteeDetails(reporteeIds);
 
   const toUser = await getUserById(result.toUserId);
