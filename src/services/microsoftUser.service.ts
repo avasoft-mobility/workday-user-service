@@ -205,6 +205,10 @@ const acceptMigrationRequest = async (
     };
   }
 
+  if (result.status !== "acknowledged") {
+    return { code: 400, message: "Request has not acknowleged" };
+  }
+
   const updateUserOverride = await microsoftUserOverrideSchema.findOneAndUpdate(
     { _id: migrationId },
     {
