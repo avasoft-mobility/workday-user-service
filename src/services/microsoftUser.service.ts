@@ -150,18 +150,6 @@ const getAllDomains = async (): Promise<string[]> => {
   return allDomains;
 };
 
-const updateRequestStatus = async (
-  migrationId: string,
-  requestStatus: string
-): Promise<MicrosoftUserOverride | null> => {
-  const response = await microsoftUserOverrideSchema.findOneAndUpdate(
-    { _id: migrationId },
-    { $set: { status: requestStatus } }
-  );
-
-  return response;
-};
-
 const acceptMigrationRequest = async (
   userId: string,
   migrationId: string
@@ -313,6 +301,141 @@ const acceptMigrationRequest = async (
   };
 };
 
+const rejectMigrationRequest = async (
+  userId: string,
+  migrationId: string
+): Promise<{
+  code: number;
+  message?: string;
+  body?: PopulateMicrosoftUserOverride;
+}> => {
+  if (!userId) {
+    return { code: 400, message: "User Id is required" };
+  }
+
+  const currentUser = await getUserById(userId);
+  if (!currentUser) {
+    return { code: 404, message: "User not found" };
+  }
+
+  if (!migrationId) {
+    return { code: 400, message: "Migration Id is required" };
+  }
+
+  if (!isValidObjectId(migrationId)) {
+    return { code: 400, message: "Migration Id is not valid" };
+  }
+
+  const result = await microsoftUserOverrideSchema.findOne({
+    _id: migrationId,
+  });
+
+  if (!result) {
+    return {
+      code: 404,
+      message: `Migration detail is not found for this Migration Id: ${migrationId}`,
+    };
+  }
+
+  if (result.status === "rejected" && result.rejectedBy && !result.isActive) {
+    return {
+      code: 201,
+      message: `Your migration request is already rejected`,
+    };
+  }
+
+  if (result.status === "accepted") {
+    return {
+      code: 400,
+      message:
+        "Accepted migration cannot reject again. Please create a new request",
+    };
+  }
+
+  const updateUserOverride = await microsoftUserOverrideSchema.findOneAndUpdate(
+    { _id: migrationId },
+    {
+      $set: {
+        status: "rejected",
+        acceptedBy: currentUser.name,
+      },
+    }
+  );
+
+  if (!updateUserOverride) {
+    return { code: 400, message: "Failed to reject request" };
+  }
+
+  let reporteeIds = result.reportees;
+  let reportees = await getReporteeDetails(reporteeIds);
+
+  const toUser = await getUserById(result.toUserId);
+  if (!toUser) {
+    return { code: 404, message: "To user not found" };
+  }
+
+  const practiceManager = await findPracticeManager(
+    toUser.userId,
+    toUser.practice
+  );
+  if (!practiceManager) {
+    return { code: 404, message: "Practice Manger not found" };
+  }
+
+  const directManager = await findDirectManager(toUser.managerId);
+  if (!directManager) {
+    return { code: 404, message: "Direct Manger not found" };
+  }
+
+  const greetings = "Hi Team";
+  const mailType = "rejected";
+  const mailSubject = "Reportee migration - Rejected.";
+  const message = "Your request for migration of reportees is been rejected.";
+  const toMails = [];
+  const ccMails = [];
+
+  toMails.push(toUser.mail.toLocaleLowerCase());
+  ccMails.push(practiceManager.mail.toLocaleLowerCase());
+  ccMails.push(directManager.mail.toLocaleLowerCase());
+  ccMails.push("mobility@avasoft.com");
+
+  const mailResponse = await sendMigrationRequest(
+    greetings,
+    mailType,
+    mailSubject,
+    migrationId,
+    message,
+    reportees,
+    toUser,
+    ccMails,
+    toMails
+  );
+
+  if (!mailResponse) {
+    return {
+      code: 400,
+      message: "There is a problem in sending mail",
+    };
+  }
+
+  const updateMailRequestId =
+    await microsoftUserOverrideSchema.findByIdAndUpdate(result._id, {
+      mailRequestId: mailResponse[0].headers["x-message-id"],
+    });
+
+  if (!updateMailRequestId) {
+    return {
+      code: 400,
+      message: "Mail request Id not updated successfully",
+    };
+  }
+
+  return {
+    code: 200,
+    message: "Your request has been rejected",
+  };
+};
+
 const migrateReportees = async (
   toUserId: string,
   reportees: string[]
@@ -325,15 +448,6 @@ const migrateReportees = async (
   return response as MicrosoftUser;
 };
 
-const getUserReportees = async (
-  userId: string
-): Promise<MicrosoftUser | null> => {
-  const response = await microsoftUsersSchema.findOne({
-    userId: userId,
-  });
-  return response;
-};
-
 const getReporteeDetails = async (
   reporteesId: string[]
 ): Promise<MicrosoftUser[]> => {
@@ -342,56 +456,6 @@ const getReporteeDetails = async (
   });
 
   return response;
-};
-
-const sendMailRequest = async (
-  userId: string,
-  migrationId: string,
-  mailSubject: string,
-  mailBody: string,
-  mailType: string
-) => {
-  const getUserDetails = await getUserReportees(userId);
-  let employeeDetails: MicrosoftUser[] = [];
-  if (!getUserDetails) {
-    return { code: 200, message: "User not available" };
-  }
-
-  if (getUserDetails) {
-    //get reportee details of toUser
-    employeeDetails = await getReporteeDetails(getUserDetails?.reportings);
-  }
-
-  if (employeeDetails) {
-    const uniqueIds: string[] = [];
-    const unique = employeeDetails.filter((element) => {
-      const isDuplicate = getUserDetails.userId.includes(element.userId);
-
-      if (!isDuplicate) {
-        uniqueIds.push(element.userId);
-        return true;
-      }
-
-      return false;
-    });
-
-    //mail to user
-    const mailRequest = await sendMigrationRequest(
-      "Hi " + getUserDetails?.name,
-      mailType,
-      mailSubject,
-      migrationId,
-      mailBody,
-      unique,
-      getUserDetails,
-      [],
-      []
-    );
-
-    if (mailRequest) {
-      return mailRequest;
-    }
-  }
 };
 
 const alterCollection = async (): Promise<any> => {
@@ -624,11 +688,9 @@ export {
   getAllUsers,
   getAllDomains,
   acceptMigrationRequest,
-  updateRequestStatus,
+  rejectMigrationRequest,
   migrateReportees,
-  getUserReportees,
   getReporteeDetails,
-  sendMailRequest,
   alterCollection,
   getMigration,
   requestReporteesMigration,

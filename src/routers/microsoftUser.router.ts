@@ -3,11 +3,9 @@ import express, { Request, Response } from "express";
 import moment from "moment";
 import LambdaClient from "../helpers/LambdaClient";
 import { Rollbar } from "../helpers/Rollbar";
-import { sendMigrationRequest } from "../helpers/SgMail";
 import AttendanceStats from "../models/Attendance-Stats.model";
 import MicrosoftUser from "../models/microsoftUser.model";
 import MyStats from "../models/myStats.model";
-import RequestedReportees from "../models/RequestedReportees.model";
 import TeamStats from "../models/teamStats.model";
 import TodoStats from "../models/Todo-Stats.model";
 import { Todo } from "../models/Todos.model";
@@ -20,10 +18,8 @@ import {
   getAllUsers,
   getMigration,
   getMyTeamReport,
-  migrateReportees,
+  rejectMigrationRequest,
   requestReporteesMigration,
-  sendMailRequest,
-  updateRequestStatus,
 } from "../services/microsoftUser.service";
 import {
   exceptionalValidation,
@@ -373,34 +369,19 @@ router.get(
   }
 );
 
-//RequestReject
 router.get(
-  "/reportee-migration/:migrationId/reject",
+  "/:userId/reportee-migration/:migrationId/reject",
   async (req: Request, res: Response) => {
     try {
-      const migrationId = req.params.migrationId as string;
-      const status = "rejected";
-      const result = await updateRequestStatus(migrationId, status);
-      if (!result) {
-        res.status(400).send({ message: "failed to reject request" });
-        return;
+      const userId = req.params.userId;
+      const migrationId = req.params.migrationId;
+
+      const response = await rejectMigrationRequest(userId, migrationId);
+      if (response.code === 200) {
+        return res.status(response.code).send(response.message);
       }
 
-      const mailSubject = "Reportee migration - Rejected.";
-      const mailBody =
-        "Your request for migration of reportees is been rejected.";
-      const mailRequest = "accept";
-
-      const requestAcceptResult = await sendMailRequest(
-        result.toUserId,
-        result._id,
-        mailSubject,
-        mailBody,
-        mailRequest
-      );
-      if (requestAcceptResult) {
-        return res.status(200).send("Your request has been rejected.");
-      }
+      return res.status(response.code).send(response.message);
     } catch (error) {
       Rollbar.error(error as unknown as Error, req);
       res.status(500).send({ message: (error as unknown as Error).message });
