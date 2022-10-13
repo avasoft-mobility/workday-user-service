@@ -302,7 +302,7 @@ const requestReporteesMigration = async (
 
   const greetings = "Hi Team";
   const mailType = "requested";
-  const mailSubject = "Reportee Migration Request";
+  const mailSubject = `Migration Request - [#${result._id}] - Requested`;
   const migrationId = result._id;
   const message = "Please find the below details for reportee migration.";
   const toMails = [];
@@ -525,7 +525,7 @@ const acceptMigrationRequest = async (
 
   const greetings = `Hi ${toUser.name}`;
   const mailType = "accepted";
-  const mailSubject = `Reportee migration - [#${migrationId}] - Accepted`;
+  const mailSubject = `Migration Request - [#${migrationId}] - Accepted`;
   const message = "Your request has been accepted and reportees are updated.";
   const toMails = [];
   const ccMails = [];
@@ -612,7 +612,7 @@ const rejectMigrationRequest = async (
 
   if (result.status === "rejected" && result.rejectedBy && !result.isActive) {
     return {
-      code: 201,
+      code: 400,
       message: `Your migration request is already rejected`,
     };
   }
@@ -630,7 +630,7 @@ const rejectMigrationRequest = async (
     {
       $set: {
         status: "rejected",
-        acceptedBy: currentUser.name,
+        rejectedBy: currentUser.name,
       },
     }
   );
@@ -658,7 +658,7 @@ const rejectMigrationRequest = async (
 
   const greetings = `Hi ${toUser.name}`;
   const mailType = "rejected";
-  const mailSubject = `Reportee migration - [#${migrationId}] Rejected`;
+  const mailSubject = `Migration Request - [#${migrationId}] Rejected`;
   const message = "Your request for migration of reportees is been rejected.";
   const toMails = [];
   const ccMails = [];
