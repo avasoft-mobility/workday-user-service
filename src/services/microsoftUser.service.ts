@@ -533,7 +533,7 @@ const acceptMigrationRequest = async (
     return { code: 404, message: "Direct Manger not found" };
   }
 
-  const greetings = "Hi Team";
+  const greetings = `Hi ${toUser.name}`;
   const mailType = "accepted";
   const mailSubject = `Reportee migration - [#${migrationId}] - Accepted`;
   const message = "Your request has been accepted and reportees are updated.";
@@ -668,7 +668,7 @@ const rejectMigrationRequest = async (
     return { code: 404, message: "Direct Manger not found" };
   }
 
-  const greetings = "Hi Team";
+  const greetings = `Hi ${toUser.name}`;
   const mailType = "rejected";
   const mailSubject = `Reportee migration - [#${migrationId}] Rejected`;
   const message = "Your request for migration of reportees is been rejected.";
