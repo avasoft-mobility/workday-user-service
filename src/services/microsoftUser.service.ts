@@ -699,6 +699,7 @@ const updateAcknowledgementDetails = async (
   const mailBody = "The manager has acknowledged the request";
   const mailType = "acknowledged";
   const ccMailIds: string[] = [];
+  ccMailIds.push(user.mail);
 
   const reporteeDetails: MicrosoftUser[] = await microsoftUsersSchema.find({
     userId: { $in: migrationDetails.reportees },

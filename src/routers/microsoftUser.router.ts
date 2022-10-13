@@ -465,6 +465,12 @@ router.get(
         _id: migrationId,
       });
 
+      if (migrationDetails?.status !== "requested") {
+        res
+          .status(400)
+          .send({ message: "The migration should be in requested status" });
+      }
+
       if (!migrationDetails) {
         res.status(400).send({
           message: "migration Details doesn't exist for this migrationId",
