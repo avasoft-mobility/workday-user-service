@@ -322,7 +322,7 @@ router.get(
         return res.status(response.code).json(response.body);
       }
 
-      return res.status(response.code).json(response.message);
+      return res.status(response.code).json({ message: response.message });
     } catch (error) {
       Rollbar.error(error as unknown as Error, req);
       res.status(500).send({ message: (error as unknown as Error).message });
@@ -341,10 +341,10 @@ router.post(
 
       const response = await requestReporteesMigration(toUser, reportees);
       if (response.code === 200) {
-        return res.status(response.code).json(response.message);
+        return res.status(response.code).json({ message: response.message });
       }
 
-      return res.status(response.code).json(response.message);
+      return res.status(response.code).json({ message: response.message });
     } catch (error) {
       Rollbar.error(error as unknown as Error, req);
       res.status(500).send({ message: (error as unknown as Error).message });
@@ -399,7 +399,7 @@ router.get(
         migrationDetails!
       );
       if (result) {
-        return res.status(result.code).send(result?.message);
+        return res.status(result.code).send({ message: result.message });
       }
     } catch (error) {
       Rollbar.error(error as unknown as Error, req);
@@ -417,10 +417,10 @@ router.get(
 
       const response = await acceptMigrationRequest(userId, migrationId);
       if (response.code === 200) {
-        return res.status(response.code).send(response.message);
+        return res.status(response.code).send({ message: response.message });
       }
 
-      return res.status(response.code).send(response.message);
+      return res.status(response.code).send({ message: response.message });
     } catch (error) {
       Rollbar.error(error as unknown as Error, req);
       res.status(500).send({ message: (error as unknown as Error).message });
@@ -437,10 +437,10 @@ router.get(
 
       const response = await rejectMigrationRequest(userId, migrationId);
       if (response.code === 200) {
-        return res.status(response.code).send(response.message);
+        return res.status(response.code).send({ message: response.message });
       }
 
-      return res.status(response.code).send(response.message);
+      return res.status(response.code).send({ message: response.message });
     } catch (error) {
       Rollbar.error(error as unknown as Error, req);
       res.status(500).send({ message: (error as unknown as Error).message });
