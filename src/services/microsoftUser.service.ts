@@ -209,6 +209,23 @@ const acceptMigrationRequest = async (
     return { code: 400, message: "Request has not acknowleged" };
   }
 
+  const disableLastMigration =
+    await microsoftUserOverrideSchema.findOneAndUpdate(
+      { isActive: true },
+      {
+        $set: {
+          isActive: false,
+        },
+      }
+    );
+
+  if (!disableLastMigration) {
+    return {
+      code: 400,
+      message: "Unable to disable the previous active migration detail",
+    };
+  }
+
   const updateUserOverride = await microsoftUserOverrideSchema.findOneAndUpdate(
     { _id: migrationId },
     {
@@ -249,7 +266,7 @@ const acceptMigrationRequest = async (
 
   const directManager = await findDirectManager(toUser.managerId);
   if (!directManager) {
-    return { code: 404, message: "Practice Manger not found" };
+    return { code: 404, message: "Direct Manger not found" };
   }
 
   const greetings = "Hi Team";
@@ -259,9 +276,9 @@ const acceptMigrationRequest = async (
   const toMails = [];
   const ccMails = [];
 
-  toMails.push(practiceManager.mail.toLocaleLowerCase());
-  toMails.push(directManager.mail.toLocaleLowerCase());
-  ccMails.push(toUser.mail.toLocaleLowerCase());
+  toMails.push(toUser.mail.toLocaleLowerCase());
+  ccMails.push(practiceManager.mail.toLocaleLowerCase());
+  ccMails.push(directManager.mail.toLocaleLowerCase());
   ccMails.push("mobility@avasoft.com");
 
   const mailResponse = await sendMigrationRequest(
