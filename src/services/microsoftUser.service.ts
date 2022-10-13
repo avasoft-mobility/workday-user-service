@@ -301,7 +301,7 @@ const requestReporteesMigration = async (
 
   const directManager = await findDirectManager(toUser.managerId);
   if (!directManager) {
-    return { code: 404, message: "Practice Manger not found" };
+    return { code: 404, message: "Direct Manger not found" };
   }
 
   const greetings = "Hi Team";
