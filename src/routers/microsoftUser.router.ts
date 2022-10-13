@@ -436,7 +436,7 @@ router.get(
 );
 
 router.get(
-  "/:userId/reportee-migration/:migrationId/acknowledged",
+  "/:userId/reportee-migration/:migrationId/acknowledge",
   async (req: Request, res: Response) => {
     try {
       const migrationId = req.params.migrationId;
