@@ -439,7 +439,7 @@ router.get(
         migrationDetails!
       );
       if (result) {
-        return res.status(result.status).send(result?.message);
+        return res.status(result.code).send(result?.message);
       }
     } catch (error) {
       Rollbar.error(error as unknown as Error, req);

@@ -686,7 +686,11 @@ const findDirectManager = async (managerId: string): Promise<MicrosoftUser> => {
 const updateAcknowledgementDetails = async (
   user: MicrosoftUser,
   migrationDetails: MicrosoftUserOverride
-) => {
+): Promise<{
+  code: number;
+  message?: string;
+  body?: MicrosoftUserOverride;
+}> => {
   const response = await microsoftUserOverrideSchema.findByIdAndUpdate(
     migrationDetails._id,
     {
@@ -710,7 +714,7 @@ const updateAcknowledgementDetails = async (
 
   if (!directManager) {
     return {
-      status: 400,
+      code: 400,
       message: "There is a no managerId for this requested person",
     };
   }
@@ -723,7 +727,7 @@ const updateAcknowledgementDetails = async (
 
   if (!userPracticeHead) {
     return {
-      status: 400,
+      code: 400,
       message: "There is a no practiceHeadId for this requested person",
     };
   }
@@ -737,13 +741,13 @@ const updateAcknowledgementDetails = async (
     mailBody,
     reporteeDetails,
     user,
-    ["jiju.s@avasoft.com"],
-    ["Ragul.ra@avasoft.com"]
+    ccMailIds,
+    ["mobility@avasoft.com"]
   );
 
   if (!mailRequest) {
     return {
-      status: 400,
+      code: 400,
       message: "There is a problem in sending mail request",
     };
   }
@@ -754,7 +758,7 @@ const updateAcknowledgementDetails = async (
     }
   );
   return {
-    status: 200,
+    code: 200,
     message: "Your request has been Acknowledged.",
   };
 };
