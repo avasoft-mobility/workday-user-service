@@ -30,6 +30,10 @@ const microsoftUsers = new mongoose.Schema({
   managerId: {
     type: String,
   },
+  isAdmin: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 // collection name
