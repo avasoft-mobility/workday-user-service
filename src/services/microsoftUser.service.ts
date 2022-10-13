@@ -683,6 +683,86 @@ const findDirectManager = async (managerId: string): Promise<MicrosoftUser> => {
   return result as MicrosoftUser;
 };
 
+const updateAcknowledgementDetails = async (
+  user: MicrosoftUser,
+  migrationDetails: MicrosoftUserOverride
+): Promise<{
+  code: number;
+  message?: string;
+  body?: MicrosoftUserOverride;
+}> => {
+  const response = await microsoftUserOverrideSchema.findByIdAndUpdate(
+    migrationDetails._id,
+    {
+      status: "acknowledged",
+      acknowledgedBy: user.name,
+    }
+  );
+
+  const mailSubject = `Migration Request ${migrationDetails._id} - Acknowledged`;
+  const mailBody =
+    "This request has been acknowledged by the manager. @Workday Admin, please accept this request.";
+  const mailType = "acknowledged";
+  const ccMailIds: string[] = [];
+  ccMailIds.push(user.mail);
+
+  const reporteeDetails: MicrosoftUser[] = await microsoftUsersSchema.find({
+    userId: { $in: migrationDetails.reportees },
+  });
+
+  const directManager = await findDirectManager(user.managerId);
+
+  if (!directManager) {
+    return {
+      code: 400,
+      message: "There is a no managerId for this requested person",
+    };
+  }
+  ccMailIds.push(directManager.mail);
+
+  const userPracticeHead = await findPracticeManager(
+    user.userId,
+    user.practice
+  );
+
+  if (!userPracticeHead) {
+    return {
+      code: 400,
+      message: "There is a no practiceHeadId for this requested person",
+    };
+  }
+  ccMailIds.push(userPracticeHead.mail);
+
+  const mailRequest = await sendMigrationRequest(
+    "Hi Workday Team",
+    mailType,
+    mailSubject,
+    migrationDetails._id,
+    mailBody,
+    reporteeDetails,
+    user,
+    ccMailIds,
+    ["mobility@avasoft.com"]
+  );
+
+  if (!mailRequest) {
+    return {
+      code: 400,
+      message: "There is a problem in sending mail request",
+    };
+  }
+  const result = await microsoftUserOverrideSchema.findByIdAndUpdate(
+    migrationDetails._id,
+    {
+      mailRequestId: mailRequest[0].headers["x-message-id"],
+    }
+  );
+  return {
+    code: 200,
+    message: "Your request has been Acknowledged.",
+  };
+};
+
 export {
   getMyTeamReport,
   getAllUsers,
@@ -694,4 +774,5 @@ export {
   alterCollection,
   getMigration,
   requestReporteesMigration,
+  updateAcknowledgementDetails,
 };

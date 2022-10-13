@@ -9,6 +9,7 @@ interface MicrosoftUser {
   managerId: string;
   last_access: string;
   employeeId: string;
+  isAdmin: Boolean;
   __v: number;
 }
 

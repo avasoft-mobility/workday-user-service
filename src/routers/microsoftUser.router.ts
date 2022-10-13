@@ -1,6 +1,7 @@
 import axios from "axios";
 import express, { Request, Response } from "express";
 import moment from "moment";
+import { isValidObjectId } from "mongoose";
 import LambdaClient from "../helpers/LambdaClient";
 import { Rollbar } from "../helpers/Rollbar";
 import AttendanceStats from "../models/Attendance-Stats.model";
@@ -10,6 +11,7 @@ import TeamStats from "../models/teamStats.model";
 import TodoStats from "../models/Todo-Stats.model";
 import { Todo } from "../models/Todos.model";
 import UserTodoStatistics from "../models/userTodoStatistics.model";
+import microsoftUserOverrideSchema from "../schema/microsoftUserOverrideSchema";
 import microsoftUser from "../schema/microsoftUserSchema";
 import {
   acceptMigrationRequest,
@@ -20,6 +22,7 @@ import {
   getMyTeamReport,
   rejectMigrationRequest,
   requestReporteesMigration,
+  updateAcknowledgementDetails,
 } from "../services/microsoftUser.service";
 import {
   exceptionalValidation,
@@ -382,6 +385,62 @@ router.get(
       }
 
       return res.status(response.code).send(response.message);
+    } catch (error) {
+      Rollbar.error(error as unknown as Error, req);
+      res.status(500).send({ message: (error as unknown as Error).message });
+    }
+  }
+);
+
+router.get(
+  "/:userId/reportee-migration/:migrationId/acknowledge",
+  async (req: Request, res: Response) => {
+    try {
+      const migrationId = req.params.migrationId;
+      const userId = req.params.userId;
+
+      if (!isValidObjectId(migrationId)) {
+        res
+          .status(400)
+          .send({ message: "migrationId is not a valid object Id" });
+      }
+
+      if (!userId) {
+        res.status(400).send({ message: "userId doesn't exist" });
+      }
+
+      if (!migrationId) {
+        res.status(400).send({ message: "migrationId doesn't exist" });
+      }
+
+      const users = await microsoftUser.findOne({ userId: userId });
+      if (!users) {
+        res.status(400).send({ message: "user doesn't exist for this userId" });
+      }
+
+      const migrationDetails = await microsoftUserOverrideSchema.findOne({
+        _id: migrationId,
+      });
+
+      if (!migrationDetails) {
+        res.status(400).send({
+          message: "migration Details doesn't exist for this migrationId",
+        });
+      }
+
+      if (migrationDetails?.status !== "requested") {
+        res
+          .status(400)
+          .send({ message: "The migration should be in requested status" });
+      }
+
+      const result = await updateAcknowledgementDetails(
+        users!,
+        migrationDetails!
+      );
+      if (result) {
+        return res.status(result.code).send(result?.message);
+      }
     } catch (error) {
       Rollbar.error(error as unknown as Error, req);
       res.status(500).send({ message: (error as unknown as Error).message });
