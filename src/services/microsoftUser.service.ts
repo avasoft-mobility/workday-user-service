@@ -463,13 +463,13 @@ const acceptMigrationRequest = async (
 
   if (result.status === "accepted" && result.acceptedBy && result.isActive) {
     return {
-      code: 201,
+      code: 400,
       message: `Migration already updated for this migration Id: ${migrationId}`,
     };
   }
 
   if (result.status !== "acknowledged") {
-    return { code: 400, message: "Request has not acknowleged" };
+    return { code: 400, message: "Request has not acknowledged" };
   }
 
   const currentActiveMigration = await microsoftUserOverrideSchema.findOne({
