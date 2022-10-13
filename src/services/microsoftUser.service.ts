@@ -209,21 +209,16 @@ const acceptMigrationRequest = async (
     return { code: 400, message: "Request has not acknowleged" };
   }
 
-  const disableLastMigration =
-    await microsoftUserOverrideSchema.findOneAndUpdate(
-      { isActive: true },
-      {
-        $set: {
-          isActive: false,
-        },
-      }
-    );
+  const currentActiveMigration = await microsoftUserOverrideSchema.findOne({
+    isActive: true,
+  });
 
-  if (!disableLastMigration) {
-    return {
-      code: 400,
-      message: "Unable to disable the previous active migration detail",
-    };
+  if (currentActiveMigration) {
+    await currentActiveMigration.updateOne({
+      $set: {
+        isActive: false,
+      },
+    });
   }
 
   const updateUserOverride = await microsoftUserOverrideSchema.findOneAndUpdate(
@@ -271,7 +266,7 @@ const acceptMigrationRequest = async (
 
   const greetings = "Hi Team";
   const mailType = "accepted";
-  const mailSubject = "Reportee migration - successfull.";
+  const mailSubject = `Reportee migration - [#${migrationId}] - accepted`;
   const message = "Your request has been accepted and reportees are updated.";
   const toMails = [];
   const ccMails = [];
