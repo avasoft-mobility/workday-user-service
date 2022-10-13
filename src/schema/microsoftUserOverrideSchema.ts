@@ -17,7 +17,6 @@ const microsoftUsersOverrides = new mongoose.Schema(
     },
     mailRequestId: {
       type: String,
-      required: true,
     },
     acknowledgedBy: {
       type: String,
