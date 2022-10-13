@@ -295,10 +295,6 @@ const requestReporteesMigration = async (
   }
 
   const practiceManager = await findPracticeManager(toUserId, toUser.practice);
-  if (!practiceManager) {
-    return { code: 404, message: "Practice Manger not found" };
-  }
-
   const directManager = await findDirectManager(toUser.managerId);
   if (!directManager) {
     return { code: 404, message: "Direct Manger not found" };
@@ -312,7 +308,10 @@ const requestReporteesMigration = async (
   const toMails = [];
   const ccMails = [];
 
-  toMails.push(practiceManager.mail.toLocaleLowerCase());
+  if (practiceManager) {
+    toMails.push(practiceManager.mail.toLocaleLowerCase());
+  }
+
   toMails.push(directManager.mail.toLocaleLowerCase());
   ccMails.push(toUser.mail.toLocaleLowerCase());
   ccMails.push("mobility@avasoft.com");
@@ -379,7 +378,6 @@ const updateAcknowledgementDetails = async (
   });
 
   const directManager = await findDirectManager(user.managerId);
-
   if (!directManager) {
     return {
       code: 400,
@@ -393,13 +391,9 @@ const updateAcknowledgementDetails = async (
     user.practice
   );
 
-  if (!userPracticeHead) {
-    return {
-      code: 400,
-      message: "There is a no practiceHeadId for this requested person",
-    };
+  if (userPracticeHead) {
+    ccMailIds.push(userPracticeHead.mail);
   }
-  ccMailIds.push(userPracticeHead.mail);
 
   const mailRequest = await sendMigrationMail(
     "Hi Workday Team",
@@ -524,10 +518,6 @@ const acceptMigrationRequest = async (
     toUser.userId,
     toUser.practice
   );
-  if (!practiceManager) {
-    return { code: 404, message: "Practice Manger not found" };
-  }
-
   const directManager = await findDirectManager(toUser.managerId);
   if (!directManager) {
     return { code: 404, message: "Direct Manger not found" };
@@ -540,8 +530,10 @@ const acceptMigrationRequest = async (
   const toMails = [];
   const ccMails = [];
 
+  if (practiceManager) {
+    ccMails.push(practiceManager.mail.toLocaleLowerCase());
+  }
   toMails.push(toUser.mail.toLocaleLowerCase());
-  ccMails.push(practiceManager.mail.toLocaleLowerCase());
   ccMails.push(directManager.mail.toLocaleLowerCase());
   ccMails.push("mobility@avasoft.com");
 
@@ -659,10 +651,6 @@ const rejectMigrationRequest = async (
     toUser.userId,
     toUser.practice
   );
-  if (!practiceManager) {
-    return { code: 404, message: "Practice Manger not found" };
-  }
-
   const directManager = await findDirectManager(toUser.managerId);
   if (!directManager) {
     return { code: 404, message: "Direct Manger not found" };
@@ -675,8 +663,10 @@ const rejectMigrationRequest = async (
   const toMails = [];
   const ccMails = [];
 
+  if (practiceManager) {
+    ccMails.push(practiceManager.mail.toLocaleLowerCase());
+  }
   toMails.push(toUser.mail.toLocaleLowerCase());
-  ccMails.push(practiceManager.mail.toLocaleLowerCase());
   ccMails.push(directManager.mail.toLocaleLowerCase());
   ccMails.push("mobility@avasoft.com");
 
