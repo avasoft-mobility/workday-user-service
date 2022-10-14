@@ -325,9 +325,8 @@ const requestReporteesMigration = async (
   const ccMails = [];
 
   if (practiceManager) {
-    toMails.push(practiceManager.mail.toLocaleLowerCase());
+    ccMails.push(practiceManager.mail.toLocaleLowerCase());
   }
-
   toMails.push(directManager.mail.toLocaleLowerCase());
   ccMails.push(toUser.mail.toLocaleLowerCase());
   ccMails.push("mobility@avasoft.com");
@@ -394,11 +393,15 @@ const updateAcknowledgementDetails = async (
       userId: migrationDetails.toUserId,
     });
 
+  if (!requestedUser) {
+    return { code: 404, message: "Requested user not found" };
+  }
+
   const reporteeDetails: MicrosoftUser[] = await microsoftUsersSchema.find({
     userId: { $in: migrationDetails.reportees },
   });
 
-  const directManager = await findDirectManager(user.managerId);
+  const directManager = await findDirectManager(requestedUser.managerId);
   if (!directManager) {
     return {
       code: 400,
@@ -408,7 +411,7 @@ const updateAcknowledgementDetails = async (
   ccMailIds.push(directManager.mail);
 
   const userPracticeHead = await findPracticeManager(
-    user.userId,
+    requestedUser.userId,
     user.practice
   );
 
