@@ -386,7 +386,6 @@ const updateAcknowledgementDetails = async (
     "This request has been acknowledged by the manager. @Workday Admin, please accept this request.";
   const mailType = "acknowledged";
   const ccMailIds: string[] = [];
-  ccMailIds.push(user.mail);
 
   const requestedUser: MicrosoftUser | null =
     await microsoftUsersSchema.findOne({
@@ -396,6 +395,7 @@ const updateAcknowledgementDetails = async (
   if (!requestedUser) {
     return { code: 404, message: "Requested user not found" };
   }
+  ccMailIds.push(requestedUser.userId);
 
   const reporteeDetails: MicrosoftUser[] = await microsoftUsersSchema.find({
     userId: { $in: migrationDetails.reportees },
