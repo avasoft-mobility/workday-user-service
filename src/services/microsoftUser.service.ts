@@ -497,6 +497,7 @@ const acceptMigrationRequest = async (
   }
 
   const currentActiveMigration = await microsoftUserOverrideSchema.findOne({
+    toUserId: result.toUserId,
     isActive: true,
   });
 
