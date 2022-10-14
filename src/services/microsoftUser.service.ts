@@ -395,7 +395,7 @@ const updateAcknowledgementDetails = async (
   if (!requestedUser) {
     return { code: 404, message: "Requested user not found" };
   }
-  ccMailIds.push(requestedUser.userId);
+  ccMailIds.push(requestedUser.mail.toLocaleLowerCase());
 
   const reporteeDetails: MicrosoftUser[] = await microsoftUsersSchema.find({
     userId: { $in: migrationDetails.reportees },
@@ -408,7 +408,7 @@ const updateAcknowledgementDetails = async (
       message: "There is a no managerId for this requested person",
     };
   }
-  ccMailIds.push(directManager.mail);
+  ccMailIds.push(directManager.mail.toLocaleLowerCase());
 
   const userPracticeHead = await findPracticeManager(
     requestedUser.userId,
@@ -416,7 +416,7 @@ const updateAcknowledgementDetails = async (
   );
 
   if (userPracticeHead) {
-    ccMailIds.push(userPracticeHead.mail);
+    ccMailIds.push(userPracticeHead.mail.toLocaleLowerCase());
   }
 
   const mailRequest = await sendMigrationMail(
