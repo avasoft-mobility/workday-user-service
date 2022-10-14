@@ -381,9 +381,9 @@ const updateAcknowledgementDetails = async (
     }
   );
 
-  const mailSubject = `Migration Request ${migrationDetails._id} - Acknowledged`;
+  const mailSubject = `Migration Request - [#${migrationDetails._id}] - Acknowledged`;
   const mailBody =
-    "This request has been acknowledged by the manager. @Workday Admin, please accept this request.";
+    "This request has been acknowledged by the manager, please accept this request.";
   const mailType = "acknowledged";
   const ccMailIds: string[] = [];
 
@@ -684,8 +684,9 @@ const rejectMigrationRequest = async (
 
   const greetings = `Hi ${toUser.name}`;
   const mailType = "rejected";
-  const mailSubject = `Migration Request - [#${migrationId}] Rejected`;
-  const message = "Your request for migration of reportees is been rejected.";
+  const mailSubject = `Migration Request - [#${migrationId}] - Rejected`;
+  const message =
+    "Your request for migration of reportees is rejected, please contact your manager for further details";
   const toMails = [];
   const ccMails = [];
 
