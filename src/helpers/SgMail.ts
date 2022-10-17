@@ -118,15 +118,7 @@ const sendMigrationMail = async (
         ? `<div id= "redirectionLink">
               <h4 style="margin-bottom: 0;display: inline">Click the link to acknowledge / accept this request: </h4>
               <br>
-              ${
-                origin
-                  ? origin.includes("workday")
-                    ? `<a href="https://workday.avasoft.com/migration/${migrationId}">https://workday.avasoft.com/migration/${migrationId}</a>`
-                    : origin.includes("hivenp")
-                    ? `<a href="https://hivenp.avasoft.com/workday/index.html#/migration/${migrationId}">https://hivenp.avasoft.com/workday/index.html#/migration/${migrationId}</a>`
-                    : `<a href="https://hive.avasoft.com/todo/index.html#/migration/${migrationId}">https://hive.avasoft.com/todo/index.html#/migration/${migrationId}</a>`
-                  : `<a href="https://hive.avasoft.com/todo/index.html#/migration/${migrationId}">https://hive.avasoft.com/todo/index.html#/migration/${migrationId}</a>`
-              }
+              ${redirectionLink(origin, migrationId)}
             </div>`
         : ``
     }
@@ -136,9 +128,23 @@ const sendMigrationMail = async (
   </div>   
   </body>`,
   };
-
   const result = await sgMail.sendMultiple(REQUEST_MESSAGE);
   return result;
+};
+
+const redirectionLink = (origin: string | undefined, migrationId: string) => {
+  if (!origin) {
+    return `<a href="https://hive.avasoft.com/todo/index.html#/migration/${migrationId}">https://hive.avasoft.com/todo/index.html#/migration/${migrationId}</a>`;
+  }
+  if (origin) {
+    if (origin.includes("workday.avasoft.com")) {
+      return `<a href="https://workday.avasoft.com/migration/${migrationId}">https://workday.avasoft.com/migration/${migrationId}</a>`;
+    }
+    if (origin.includes("hivenp")) {
+      return `<a href="https://hivenp.avasoft.com/workday/index.html#/migration/${migrationId}">https://hivenp.avasoft.com/workday/index.html#/migration/${migrationId}</a>`;
+    }
+    return `<a href="https://hive.avasoft.com/todo/index.html#/migration/${migrationId}">https://hive.avasoft.com/todo/index.html#/migration/${migrationId}</a>`;
+  }
 };
 
 export { sendMigrationMail };
