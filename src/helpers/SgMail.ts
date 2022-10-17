@@ -119,9 +119,13 @@ const sendMigrationMail = async (
               <h4 style="margin-bottom: 0;display: inline">Click the link to acknowledge / accept this request: </h4>
               <br>
               ${
-                origin === "https://ava-cind-todoapp-fe-prod.azurewebsites.net"
-                  ? `<a href="${origin}/migration/${migrationId}">${origin}/migration/${migrationId}</a>`
-                  : `<a href="https://hivenp.avasoft.com/workday/index.html#/migration/${migrationId}">https://hivenp.avasoft.com/workday/index.html#/migration/${migrationId}</a>`
+                origin
+                  ? origin.includes("workday")
+                    ? `<a href="https://workday.avasoft.com/migration/${migrationId}">https://workday.avasoft.com/migration/${migrationId}</a>`
+                    : origin.includes("hivenp")
+                    ? `<a href="https://hivenp.avasoft.com/workday/index.html#/migration/${migrationId}">https://hivenp.avasoft.com/workday/index.html#/migration/${migrationId}</a>`
+                    : `<a href="https://hive.avasoft.com/todo/index.html#/migration/${migrationId}">https://hive.avasoft.com/todo/index.html#/migration/${migrationId}</a>`
+                  : `<a href="https://hive.avasoft.com/todo/index.html#/migration/${migrationId}">https://hive.avasoft.com/todo/index.html#/migration/${migrationId}</a>`
               }
             </div>`
         : ``
