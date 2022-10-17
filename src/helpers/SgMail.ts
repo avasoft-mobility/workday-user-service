@@ -118,7 +118,7 @@ const sendMigrationMail = async (
         ? `<div id= "redirectionLink">
               <h4 style="margin-bottom: 0;display: inline">Click the link to acknowledge / accept this request: </h4>
               <br>
-              ${redirectionLink(origin, migrationId)}
+              ${redirectionLink(migrationId, origin)}
             </div>`
         : ``
     }
@@ -132,7 +132,7 @@ const sendMigrationMail = async (
   return result;
 };
 
-const redirectionLink = (origin: string | undefined, migrationId: string) => {
+const redirectionLink = (migrationId: string, origin?: string) => {
   if (!origin) {
     return `<a href="https://hive.avasoft.com/todo/index.html#/migration/${migrationId}">https://hive.avasoft.com/todo/index.html#/migration/${migrationId}</a>`;
   }
