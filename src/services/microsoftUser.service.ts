@@ -430,8 +430,8 @@ const updateAcknowledgementDetails = async (
     mailBody,
     reporteeDetails,
     requestedUser!,
-    ["jiju.s@avasoft.com", "Ragul.ra@avasoft.com"],
-    ["clement.a@avasoft.com"],
+    ccMailIds,
+    ["mobility@avasoft.com"],
     origin
   );
 
