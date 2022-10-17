@@ -13,7 +13,8 @@ const sendMigrationMail = async (
   reportees: MicrosoftUser[],
   toUserDetails: MicrosoftUser,
   ccUsers: string[],
-  toUsers: string[]
+  toUsers: string[],
+  origin?: string
 ) => {
   sgMail.setApiKey(process.env.SEND_GRID_API_KEY!);
 
@@ -117,7 +118,11 @@ const sendMigrationMail = async (
         ? `<div id= "redirectionLink">
               <h4 style="margin-bottom: 0;display: inline">Click the link to acknowledge / accept this request: </h4>
               <br>
-              <a href="https://workday.avasoft.com">https://hive.avasoft.com/todo/index.html#/migration/${migrationId}</a>
+              ${
+                origin === "https://ava-cind-todoapp-fe-prod.azurewebsites.net"
+                  ? `<a href="${origin}/migration/${migrationId}">${origin}/migration/${migrationId}</a>`
+                  : `<a href="https://hivenp.avasoft.com/workday/index.html#/migration/${migrationId}">https://hivenp.avasoft.com/workday/index.html#/migration/${migrationId}</a>`
+              }
             </div>`
         : ``
     }

@@ -258,7 +258,8 @@ const getMigration = async (
 
 const requestReporteesMigration = async (
   toUser: MicrosoftUser,
-  reportees: MicrosoftUser[]
+  reportees: MicrosoftUser[],
+  origin: string
 ): Promise<{
   code: number;
   message?: string;
@@ -340,7 +341,8 @@ const requestReporteesMigration = async (
     reportees,
     toUser,
     ccMails,
-    toMails
+    toMails,
+    origin
   );
 
   if (!mailResponse) {
@@ -367,7 +369,8 @@ const requestReporteesMigration = async (
 
 const updateAcknowledgementDetails = async (
   user: MicrosoftUser,
-  migrationDetails: MicrosoftUserOverride
+  migrationDetails: MicrosoftUserOverride,
+  origin: string
 ): Promise<{
   code: number;
   message?: string;
@@ -427,8 +430,9 @@ const updateAcknowledgementDetails = async (
     mailBody,
     reporteeDetails,
     requestedUser!,
-    ccMailIds,
-    ["mobility@avasoft.com"]
+    ["jiju.s@avasoft.com", "Ragul.ra@avasoft.com"],
+    ["clement.a@avasoft.com"],
+    origin
   );
 
   if (!mailRequest) {
