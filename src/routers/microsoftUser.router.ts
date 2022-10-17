@@ -338,8 +338,13 @@ router.post(
       const userId = req.params.userId;
       const toUser = req.body.toUser;
       const reportees = req.body.reportees;
+      const origin: string | undefined = req.headers.origin;
 
-      const response = await requestReporteesMigration(toUser, reportees);
+      const response = await requestReporteesMigration(
+        toUser,
+        reportees,
+        origin!
+      );
       if (response.code === 200) {
         return res.status(response.code).json({ message: response.message });
       }
@@ -358,6 +363,8 @@ router.get(
     try {
       const userId = req.params.userId;
       const migrationId = req.params.migrationId;
+      const origin: string | undefined = req.headers.origin;
+
 
       if (!isValidObjectId(migrationId)) {
         return res
@@ -407,7 +414,8 @@ router.get(
 
       const result = await updateAcknowledgementDetails(
         users!,
-        migrationDetails!
+        migrationDetails!,
+        origin!
       );
       if (result) {
         return res.status(result.code).send({ message: result.message });
