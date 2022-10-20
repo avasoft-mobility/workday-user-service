@@ -1,8 +1,9 @@
 import moment from "moment";
 import { isValidObjectId } from "mongoose";
 import LambdaClient from "../helpers/LambdaClient";
-import { sendMigrationMail } from "../helpers/SgMail";
+import sendMigrationMail from "../helpers/SesMail";
 import AttendanceModel from "../models/Attendance.model";
+import MailResponse from "../models/MailResponse.model";
 import MicrosoftUser from "../models/microsoftUser.model";
 import {
   MicrosoftUserOverride,
@@ -332,7 +333,7 @@ const requestReporteesMigration = async (
   ccMails.push(toUser.mail.toLocaleLowerCase());
   ccMails.push("mobility@avasoft.com");
 
-  const mailResponse = await sendMigrationMail(
+  const mailResponse: MailResponse = await sendMigrationMail(
     greetings,
     mailType,
     mailSubject,
@@ -354,7 +355,7 @@ const requestReporteesMigration = async (
 
   const updateMailRequestId =
     await microsoftUserOverrideSchema.findByIdAndUpdate(result._id, {
-      mailRequestId: mailResponse[0].headers["x-message-id"],
+      mailRequestId: mailResponse.ResponseMetadata.RequestId,
     });
 
   if (!updateMailRequestId) {
@@ -444,7 +445,7 @@ const updateAcknowledgementDetails = async (
   const result = await microsoftUserOverrideSchema.findByIdAndUpdate(
     migrationDetails._id,
     {
-      mailRequestId: mailRequest[0].headers["x-message-id"],
+      mailRequestId: mailRequest.ResponseMetadata.RequestId,
     }
   );
   return {
@@ -587,7 +588,7 @@ const acceptMigrationRequest = async (
 
   const updateMailRequestId =
     await microsoftUserOverrideSchema.findByIdAndUpdate(result._id, {
-      mailRequestId: mailResponse[0].headers["x-message-id"],
+      mailRequestId: mailResponse.ResponseMetadata.RequestId,
     });
 
   if (!updateMailRequestId) {
@@ -722,7 +723,7 @@ const rejectMigrationRequest = async (
 
   const updateMailRequestId =
     await microsoftUserOverrideSchema.findByIdAndUpdate(result._id, {
-      mailRequestId: mailResponse[0].headers["x-message-id"],
+      mailRequestId: mailResponse.ResponseMetadata.RequestId,
     });
 
   if (!updateMailRequestId) {
