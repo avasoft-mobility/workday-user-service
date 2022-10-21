@@ -1,8 +1,10 @@
 import MicrosoftUser from "../models/microsoftUser.model";
+import dotenv from "dotenv";
+dotenv.config();
 
 const SES_CONFIG = {
-  accessKeyId: "AKIAU2WWWSQA7IIZRY5H",
-  secretAccessKey: "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",
+  accessKeyId: process.env.ACCESS_KEY_ID,
+  secretAccessKey: process.env.SECRET_ACCESS_KEY,
   region: "ap-south-1",
 };
 
