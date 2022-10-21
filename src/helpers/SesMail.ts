@@ -3,9 +3,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const SES_CONFIG = {
-  accessKeyId: process.env.ACCESS_KEY_ID,
-  secretAccessKey: process.env.SECRET_ACCESS_KEY,
-  region: "ap-south-1",
+  region: process.env.AWS_REGION,
 };
 
 const AWS = require("aws-sdk");
