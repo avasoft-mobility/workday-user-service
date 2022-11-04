@@ -16,7 +16,7 @@ dotenv.config();
 
 app.use(cors());
 
-mongoose.connect(process.env.DB_STRING!);
+mongoose.connect(process.env.DB_STRING!, { maxPoolSize: 20 });
 mongoose.connection.on("error", (err) => {
   console.log("err", err);
 });
@@ -56,4 +56,8 @@ if (process.env.LAMBDA !== "TRUE") {
   });
 }
 
-module.exports.lambdaHandler = serverless(app);
+const serverlessApp = serverless(app);
+module.exports.lambdaHandler = async function (event: any, context: any) {
+  context.callbackWaitsForEmptyEventLoop = false;
+  return serverlessApp(event, context);
+};
