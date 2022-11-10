@@ -24,8 +24,8 @@ let sendMigrationMail = (
   let params = {
     Source: "workday@avasoft.com",
     Destination: {
-      ToAddresses: [toUsers],
-      CcAddresses: [ccUsers],
+      ToAddresses: toUsers,
+      CcAddresses: ccUsers,
     },
     Message: {
       Body: {
