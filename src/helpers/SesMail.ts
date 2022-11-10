@@ -5,7 +5,7 @@ dotenv.config();
 const SES_CONFIG = {
   accessKeyId: process.env.SES_ACCESS_KEY_ID!,
   secretAccessKey: process.env.SES_SECRET_ACCESS_KEY!,
-  region: process.env.AWS_REGION!,
+  region: "ap-south-1",
 };
 
 const AWS = require("aws-sdk");
