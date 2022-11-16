@@ -48,18 +48,17 @@ const getMyTeamReport = async (userId: string): Promise<Response> => {
     date: new Date().setHours(0, 0, 0, 0),
   });
 
-  console.log("reportingsAttendance", reportingsAttendance);
-  if (reportingsAttendance.length === 0) {
-    reportingUsers = mapUsersWithReporterName(reportingsDetail, currentUser);
-  }
-
-  if (reportingsAttendance.length > 0) {
+  if (reportingsAttendance) {
     reportingUsers = mapUsersWithAttendance(
       reportingsDetail,
       reportingsAttendance
     );
 
     reportingUsers = mapUsersWithReporterName(reportingUsers, currentUser);
+  }
+
+  if (!reportingsAttendance) {
+    reportingUsers = mapUsersWithReporterName(reportingsDetail, currentUser);
   }
 
   return { code: 200, message: "success", body: reportingUsers };
