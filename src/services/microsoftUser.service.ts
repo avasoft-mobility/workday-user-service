@@ -3,6 +3,7 @@ import LambdaClient from "../helpers/LambdaClient";
 import AttendanceModel from "../models/Attendance.model";
 import TeamReport from "../models/TeamReport.model";
 import microsoftUsersSchema from "../schema/microsoftUserSchema";
+import AttendanceSchema from "../schema/AttendanceSchema";
 const axios = require("axios");
 
 interface Response {
@@ -29,22 +30,16 @@ const getMyTeamReport = async (userId: string): Promise<Response> => {
 
   let reportingsDetail = await getMultipleMicrosoftUser(currentUser.reportings);
 
-  let reportingsAttendance = await getMicrosoftUsersAttendance(
-    currentUser.reportings
+  let reportingsAttendance = await AttendanceSchema.find({
+    microsoftUserID: { $in: currentUser.reportings },
+    date: new Date().setHours(0, 0, 0, 0),
+  });
+
+  reportingUsers = mapUsersWithAttendance(
+    reportingsDetail,
+    reportingsAttendance
   );
-
-  if (reportingsAttendance) {
-    reportingUsers = mapUsersWithAttendance(
-      reportingsDetail,
-      reportingsAttendance
-    );
-
-    reportingUsers = mapUsersWithReporterName(reportingUsers, currentUser);
-  }
-
-  if (!reportingsAttendance) {
-    reportingUsers = mapUsersWithReporterName(reportingsDetail, currentUser);
-  }
+  reportingUsers = mapUsersWithReporterName(reportingUsers, currentUser);
 
   return { code: 200, message: "success", body: reportingUsers };
 };
