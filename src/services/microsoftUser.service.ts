@@ -5,6 +5,7 @@ import sendMigrationMail from "../helpers/SesMail";
 import AttendanceModel from "../models/Attendance.model";
 import MailResponse from "../models/MailResponse.model";
 import MicrosoftUser from "../models/microsoftUser.model";
+import attendance from "../schema/AttendanceSchema";
 import {
   MicrosoftUserOverride,
   PopulateMicrosoftUserOverride,
@@ -38,21 +39,25 @@ const getMyTeamReport = async (userId: string): Promise<Response> => {
 
   let reportingsDetail = await getMultipleMicrosoftUser(currentUser.reportings);
 
-  let reportingsAttendance = await getMicrosoftUsersAttendance(
-    currentUser.reportings
-  );
+  // let reportingsAttendance = await getMicrosoftUsersAttendance(
+  //   currentUser.reportings
+  // );
 
-  if (reportingsAttendance) {
+  let reportingsAttendance = await attendance.find({
+    microsoftUserID: { $in: currentUser.reportings },
+  });
+
+  if (reportingsAttendance.length === 0) {
+    reportingUsers = mapUsersWithReporterName(reportingsDetail, currentUser);
+  }
+
+  if (reportingsAttendance.length > 0) {
     reportingUsers = mapUsersWithAttendance(
       reportingsDetail,
       reportingsAttendance
     );
 
     reportingUsers = mapUsersWithReporterName(reportingUsers, currentUser);
-  }
-
-  if (!reportingsAttendance) {
-    reportingUsers = mapUsersWithReporterName(reportingsDetail, currentUser);
   }
 
   return { code: 200, message: "success", body: reportingUsers };
