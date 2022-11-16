@@ -7,6 +7,7 @@ import runMiddleware from "run-middleware";
 import dotenv from "dotenv";
 import cors from "cors";
 import { microsoftUserRouter } from "./routers/microsoftUser.router";
+import { conn } from "./dbconnection/dbconnect";
 const app = express();
 runMiddleware(app);
 
@@ -15,15 +16,6 @@ app.use(json());
 dotenv.config();
 
 app.use(cors());
-
-mongoose.connect(process.env.DB_STRING!);
-mongoose.connection.on("error", (err) => {
-  console.log("err", err);
-});
-
-mongoose.connection.on("connected", (err, res) => {
-  console.log("mongoose is connected");
-});
 
 app.use("/users", microsoftUserRouter);
 
@@ -56,4 +48,9 @@ if (process.env.LAMBDA !== "TRUE") {
   });
 }
 
-module.exports.lambdaHandler = serverless(app);
+const serverlessApp = serverless(app);
+module.exports.lambdaHandler = async function (event: any, context: any) {
+  context.callbackWaitsForEmptyEventLoop = false;
+  conn;
+  return serverlessApp(event, context);
+};

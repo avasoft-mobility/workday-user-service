@@ -10,8 +10,8 @@ provider:
   region: ap-south-1
   memorySize: 512
   apiGateway:
-    restApiId: ka3iuykv3d
-    restApiRootResourceId: 2oykb18v30
+    restApiId: fexvzya3z2
+    restApiRootResourceId: 61k88ehg6f
 functions:
   app:
     handler: src/app.lambdaHandler
