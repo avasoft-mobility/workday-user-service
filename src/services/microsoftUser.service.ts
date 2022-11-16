@@ -5,7 +5,7 @@ import sendMigrationMail from "../helpers/SesMail";
 import AttendanceModel from "../models/Attendance.model";
 import MailResponse from "../models/MailResponse.model";
 import MicrosoftUser from "../models/microsoftUser.model";
-import attendance from "../schema/AttendanceSchema";
+import AttendanceSchema from "../schema/AttendanceSchema";
 import {
   MicrosoftUserOverride,
   PopulateMicrosoftUserOverride,
@@ -43,8 +43,9 @@ const getMyTeamReport = async (userId: string): Promise<Response> => {
   //   currentUser.reportings
   // );
 
-  let reportingsAttendance = await attendance.find({
+  let reportingsAttendance = await AttendanceSchema.find({
     microsoftUserID: { $in: currentUser.reportings },
+    date: moment(new Date()).add(1).format("YYYY-MM-DD"),
   });
 
   if (reportingsAttendance.length === 0) {
