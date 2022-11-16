@@ -45,9 +45,10 @@ const getMyTeamReport = async (userId: string): Promise<Response> => {
 
   let reportingsAttendance = await AttendanceSchema.find({
     microsoftUserID: { $in: currentUser.reportings },
-    date: moment(new Date()).add(1).format("YYYY-MM-DD"),
+    date: new Date().setHours(0, 0, 0, 0),
   });
 
+  console.log("reportingsAttendance", reportingsAttendance);
   if (reportingsAttendance.length === 0) {
     reportingUsers = mapUsersWithReporterName(reportingsDetail, currentUser);
   }
