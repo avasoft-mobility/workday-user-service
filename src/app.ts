@@ -7,7 +7,6 @@ import runMiddleware from "run-middleware";
 import dotenv from "dotenv";
 import cors from "cors";
 import { microsoftUserRouter } from "./routers/microsoftUser.router";
-import { conn } from "./dbconnection/dbconnect";
 const app = express();
 runMiddleware(app);
 
@@ -16,6 +15,10 @@ app.use(json());
 dotenv.config();
 
 app.use(cors());
+
+mongoose.connect(process.env.DB_STRING!, { maxPoolSize: 20 }, () => {
+  console.log("Connected to Database");
+});
 
 app.use("/users", microsoftUserRouter);
 
@@ -51,6 +54,5 @@ if (process.env.LAMBDA !== "TRUE") {
 const serverlessApp = serverless(app);
 module.exports.lambdaHandler = async function (event: any, context: any) {
   context.callbackWaitsForEmptyEventLoop = false;
-  conn;
   return serverlessApp(event, context);
 };
