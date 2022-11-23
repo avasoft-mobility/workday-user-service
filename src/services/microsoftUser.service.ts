@@ -37,7 +37,9 @@ const getMyTeamReport = async (userId: string): Promise<Response> => {
     (reportingId) => reportingId !== currentUser.userId
   );
 
-  let reportingsDetail = await getMultipleMicrosoftUser(currentUser.reportings);
+  let reportingsDetail = await getMultipleMicrosoftUsers(
+    currentUser.reportings
+  );
 
   let reportingsAttendance = await AttendanceSchema.find({
     microsoftUserID: { $in: currentUser.reportings },
@@ -60,11 +62,11 @@ const getMicrosoftUser = async (userId: string): Promise<TeamReport> => {
   return currentUser;
 };
 
-const getMultipleMicrosoftUser = async (
-  usersId: string[]
+const getMultipleMicrosoftUsers = async (
+  userIds: string[]
 ): Promise<TeamReport[]> => {
   let usersDetails = (await microsoftUsersSchema.find({
-    userId: { $in: usersId },
+    userId: { $in: userIds },
   })) as TeamReport[];
 
   usersDetails = usersDetails.map((x: any) => x._doc);
@@ -792,4 +794,5 @@ export {
   getMigration,
   requestReporteesMigration,
   updateAcknowledgementDetails,
+  getMultipleMicrosoftUsers,
 };

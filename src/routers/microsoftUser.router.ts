@@ -19,6 +19,7 @@ import {
   getAllDomains,
   getAllUsers,
   getMigration,
+  getMultipleMicrosoftUsers,
   getMyTeamReport,
   rejectMigrationRequest,
   requestReporteesMigration,
@@ -466,6 +467,25 @@ router.get(
     }
   }
 );
+
+router.post("/multiple_users", async (req: Request, res: Response) => {
+  try {
+    const userIds = req.body.userIds;
+
+    if (!userIds || (userIds as string[]).length === 0) {
+      res.status(400).send({ message: "Atleast one userId is required" });
+      return;
+    }
+
+    const result = await getMultipleMicrosoftUsers(userIds as string[]);
+    if (result) {
+      return res.status(200).send(result);
+    }
+  } catch (error) {
+    Rollbar.error(error as unknown as Error, req);
+    res.status(500).send({ message: (error as unknown as Error).message });
+  }
+});
 
 // function to get stats of user
 async function getStats(userId: string): Promise<UserTodoStatistics> {
