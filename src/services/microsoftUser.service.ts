@@ -324,7 +324,10 @@ const requestReporteesMigration = async (
   const ccMails = [];
 
   if (practiceManager) {
-    ccMails.push(practiceManager.mail.toLocaleLowerCase());
+    practiceManager.mail.toLocaleLowerCase() !==
+    directManager.mail.toLocaleLowerCase()
+      ? ccMails.push(practiceManager.mail.toLocaleLowerCase())
+      : null;
   }
   toMails.push(directManager.mail.toLocaleLowerCase());
   ccMails.push(toUser.mail.toLocaleLowerCase());
@@ -417,7 +420,10 @@ const updateAcknowledgementDetails = async (
   );
 
   if (userPracticeHead) {
-    ccMailIds.push(userPracticeHead.mail.toLocaleLowerCase());
+    userPracticeHead.mail.toLocaleLowerCase() !==
+    directManager.mail.toLocaleLowerCase()
+      ? ccMailIds.push(userPracticeHead.mail.toLocaleLowerCase())
+      : null;
   }
 
   const mailRequest = await sendMigrationMail(
@@ -558,7 +564,10 @@ const acceptMigrationRequest = async (
   const ccMails = [];
 
   if (practiceManager) {
-    ccMails.push(practiceManager.mail.toLocaleLowerCase());
+    practiceManager.mail.toLocaleLowerCase() !==
+    directManager.mail.toLocaleLowerCase()
+      ? ccMails.push(practiceManager.mail.toLocaleLowerCase())
+      : null;
   }
   toMails.push(toUser.mail.toLocaleLowerCase());
   ccMails.push(directManager.mail.toLocaleLowerCase());
@@ -693,7 +702,10 @@ const rejectMigrationRequest = async (
   const ccMails = [];
 
   if (practiceManager) {
-    ccMails.push(practiceManager.mail.toLocaleLowerCase());
+    practiceManager.mail.toLocaleLowerCase() !==
+    directManager.mail.toLocaleLowerCase()
+      ? ccMails.push(practiceManager.mail.toLocaleLowerCase())
+      : null;
   }
   toMails.push(toUser.mail.toLocaleLowerCase());
   ccMails.push(directManager.mail.toLocaleLowerCase());
