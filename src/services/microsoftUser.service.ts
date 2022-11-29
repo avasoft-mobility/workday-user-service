@@ -256,7 +256,7 @@ const getMigration = async (
 
 const requestReporteesMigration = async (
   toUser: MicrosoftUser,
-  reportees: MicrosoftUser[],
+  requestReporteeIds: string[],
   origin: string
 ): Promise<{
   code: number;
@@ -266,6 +266,10 @@ const requestReporteesMigration = async (
   if (!toUser) {
     return { code: 400, message: "To user is required" };
   }
+
+  var reportees: MicrosoftUser[] = await microsoftUsersSchema.find({
+    userId: { $in: requestReporteeIds },
+  });
 
   const toUserId = toUser.userId as string;
   const status = "requested";
@@ -278,16 +282,12 @@ const requestReporteesMigration = async (
     return reportee.userId !== toUserId;
   });
 
-  let reporteeIds = reportees.map((reportee: MicrosoftUser) => {
-    return reportee.userId;
-  });
-
   let toUserReportees = toUser.reportings;
   toUserReportees = toUserReportees.filter((id) => {
     return id !== toUserId;
   });
 
-  if (reporteeIds.sort().join("") === toUserReportees.sort().join("")) {
+  if (requestReporteeIds.sort().join("") === toUserReportees.sort().join("")) {
     return {
       code: 400,
       message:
@@ -297,7 +297,7 @@ const requestReporteesMigration = async (
 
   const result = await microsoftUserOverrideSchema.create({
     toUserId: toUserId,
-    reportees: reporteeIds,
+    reportees: requestReporteeIds,
     status: status,
   });
 
