@@ -267,10 +267,6 @@ const requestReporteesMigration = async (
     return { code: 400, message: "To user is required" };
   }
 
-  // if (!(reportees.length > 0)) {
-  //   return { code: 400, message: "Reportees is required" };
-  // }
-
   const toUserId = toUser.userId as string;
   const status = "requested";
 
