@@ -338,12 +338,12 @@ router.post(
       //Below userId is not used currenlty It will be used for the future Authorization and Authentication purpose
       const userId = req.params.userId;
       const toUser = req.body.toUser;
-      const reportees = req.body.reportees;
+      const requestReporteeIds = req.body.reportees;
       const origin: string | undefined = req.headers.origin;
 
       const response = await requestReporteesMigration(
         toUser,
-        reportees,
+        requestReporteeIds,
         origin!
       );
       if (response.code === 200) {
