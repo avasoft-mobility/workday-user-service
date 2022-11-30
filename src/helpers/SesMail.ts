@@ -127,31 +127,39 @@ const emailTemplate = (
   
   
   <h4 style="margin-bottom: 0;">${teamName},</h4>
-  <p>${message}</p>
+  ${
+    reportees.length !== 0
+      ? `<p>${message}</p>`
+      : `<p>The reportee(s) exclusion request has been sent!</p>`
+  }
   <br>
   <h5>Requested User : </h5>
   <p>Name: ${toUserDetails?.name}</p>
   <p>E-Mail: ${toUserDetails?.mail}</p>
   <p>Domain: ${toUserDetails?.practice}</p>
   <br>
-  <h5>Reportees:</h5>
-  <table id="customers">
-    <tr>
-      <th>S.No</th>
-      <th>Name</th>
-      <th>E-Mail</th>
-      <th>Domain</th>
-    </tr>
-    ${reportees?.reduce<string>((total, char, index) => {
-      total += `<tr>
+  ${reportees.length !== 0 ? `<h5>Reportees:</h5>` : ``}
+  ${
+    reportees.length !== 0
+      ? `<table id="customers">
+        <tr>
+          <th>S.No</th>
+          <th>Name</th>
+          <th>E-Mail</th>
+          <th>Domain</th>
+        </tr>
+        ${reportees?.reduce<string>((total, char, index) => {
+          total += `<tr>
       <td>${index + 1}</td>
       <td>${char.name}</td>
       <td>${char.mail}</td>
       <td>${char.practice}</td>
       </tr>`;
-      return total;
-    }, "")}
-  </table>
+          return total;
+        }, "")}
+      </table>`
+      : ``
+  }
   ${
     mailRequest === "requested" || mailRequest === "acknowledged"
       ? `<div id= "redirectionLink">
