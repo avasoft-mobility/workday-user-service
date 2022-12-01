@@ -22,7 +22,7 @@ interface Response {
   body: TeamReport[];
 }
 
-const FILTERED_ROLE = [
+const HIGHER_LEVEL_ROLES = [
   "practice head",
   "hr",
   "hr manager",
@@ -31,6 +31,7 @@ const FILTERED_ROLE = [
   "ceo",
   "head - hr",
   "centre head - chennai",
+  "cto",
 ];
 
 const getMyTeamReport = async (userId: string): Promise<Response> => {
@@ -306,7 +307,7 @@ const requestReporteesMigration = async (
     return { code: 400, message: "To user is required" };
   }
 
-  const isFilteredRoleMatching = FILTERED_ROLE.includes(
+  const isFilteredRoleMatching = HIGHER_LEVEL_ROLES.includes(
     toUser.role.toLocaleLowerCase()
   );
   var reportees = await getReporteeDetails(requestReporteeIds);
@@ -592,7 +593,7 @@ const acceptMigrationRequest = async (
     return { code: 404, message: "To user not found" };
   }
 
-  const isFilteredRoleMatching = FILTERED_ROLE.includes(
+  const isFilteredRoleMatching = HIGHER_LEVEL_ROLES.includes(
     toUser.role.toLocaleLowerCase()
   );
 
@@ -740,7 +741,7 @@ const rejectMigrationRequest = async (
     return { code: 404, message: "To user not found" };
   }
 
-  const isFilteredRoleMatching = FILTERED_ROLE.includes(
+  const isFilteredRoleMatching = HIGHER_LEVEL_ROLES.includes(
     toUser.role.toLocaleLowerCase()
   );
 
