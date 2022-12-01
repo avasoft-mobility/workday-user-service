@@ -225,9 +225,13 @@ const getMigration = async (
     return id !== result.toUserId;
   });
 
-  const microsoftUsers = await microsoftUsersSchema.find({
-    userId: { $in: reporteeIds },
-  });
+  const microsoftUsers = await microsoftUsersSchema
+    .find({
+      userId: { $in: reporteeIds },
+    })
+    .sort({
+      name: 1,
+    });
 
   const toUser = await microsoftUsersSchema.findOne({
     userId: result.toUserId,
@@ -267,9 +271,13 @@ const requestReporteesMigration = async (
     return { code: 400, message: "To user is required" };
   }
 
-  var reportees: MicrosoftUser[] = await microsoftUsersSchema.find({
-    userId: { $in: requestReporteeIds },
-  });
+  var reportees: MicrosoftUser[] = await microsoftUsersSchema
+    .find({
+      userId: { $in: requestReporteeIds },
+    })
+    .sort({
+      name: 1,
+    });
 
   const toUserId = toUser.userId as string;
   const status = "requested";
