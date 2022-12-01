@@ -225,9 +225,7 @@ const getMigration = async (
     return id !== result.toUserId;
   });
 
-  const microsoftUsers = await microsoftUsersSchema.find({
-    userId: { $in: reporteeIds },
-  });
+  const microsoftUsers = await getReporteeDetails(reporteeIds);
 
   const toUser = await microsoftUsersSchema.findOne({
     userId: result.toUserId,
@@ -267,9 +265,7 @@ const requestReporteesMigration = async (
     return { code: 400, message: "To user is required" };
   }
 
-  var reportees: MicrosoftUser[] = await microsoftUsersSchema.find({
-    userId: { $in: requestReporteeIds },
-  });
+  var reportees = await getReporteeDetails(requestReporteeIds);
 
   const toUserId = toUser.userId as string;
   const status = "requested";
@@ -397,10 +393,8 @@ const updateAcknowledgementDetails = async (
   }
   ccMailIds.push(requestedUser.mail.toLocaleLowerCase());
 
-  const reporteeDetails: MicrosoftUser[] = await microsoftUsersSchema.find({
-    userId: { $in: migrationDetails.reportees },
-  });
 
+  const reporteeDetails = await getReporteeDetails(migrationDetails.reportees);
   const directManager = await findDirectManager(requestedUser.managerId);
   if (!directManager) {
     return {
@@ -764,9 +758,13 @@ const findDirectManager = async (managerId: string): Promise<MicrosoftUser> => {
 const getReporteeDetails = async (
   reporteesId: string[]
 ): Promise<MicrosoftUser[]> => {
-  const response = await microsoftUsersSchema.find({
-    userId: { $in: reporteesId },
-  });
+  const response = await microsoftUsersSchema
+    .find({
+      userId: { $in: reporteesId },
+    })
+    .sort({
+      name: 1,
+    });
 
   return response;
 };
