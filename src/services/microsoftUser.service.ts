@@ -307,13 +307,13 @@ const requestReporteesMigration = async (
     return { code: 400, message: "To user is required" };
   }
 
-  const isFilteredRoleMatching = HIGHER_LEVEL_ROLES.includes(
+  const isHigherLevelRoleMatched = HIGHER_LEVEL_ROLES.includes(
     toUser.role.toLocaleLowerCase()
   );
   var reportees = await getReporteeDetails(requestReporteeIds);
 
   const toUserId = toUser.userId as string;
-  const status = isFilteredRoleMatching ? "acknowledged" : "requested";
+  const status = isHigherLevelRoleMatched ? "acknowledged" : "requested";
 
   reportees = reportees.filter(
     (value, index, self) =>
@@ -341,7 +341,7 @@ const requestReporteesMigration = async (
     reportees: requestReporteeIds,
     previousReportees: toUserReportees,
     status: status,
-    acknowledgedBy: isFilteredRoleMatching ? "-" : undefined,
+    acknowledgedBy: isHigherLevelRoleMatched ? "-" : undefined,
   });
 
   if (!result) {
@@ -356,7 +356,7 @@ const requestReporteesMigration = async (
   const toMails = [];
   const ccMails = [];
 
-  if (!isFilteredRoleMatching) {
+  if (!isHigherLevelRoleMatched) {
     const practiceManager = await findPracticeManager(
       toUserId,
       toUser.practice
@@ -377,7 +377,7 @@ const requestReporteesMigration = async (
     ccMails.push("mobility@avasoft.com");
   }
 
-  if (isFilteredRoleMatching) {
+  if (isHigherLevelRoleMatched) {
     toMails.push("mobility@avasoft.com");
     ccMails.push(toUser.mail.toLocaleLowerCase());
   }
@@ -593,7 +593,7 @@ const acceptMigrationRequest = async (
     return { code: 404, message: "To user not found" };
   }
 
-  const isFilteredRoleMatching = HIGHER_LEVEL_ROLES.includes(
+  const isHigherLevelRoleMatched = HIGHER_LEVEL_ROLES.includes(
     toUser.role.toLocaleLowerCase()
   );
 
@@ -604,7 +604,7 @@ const acceptMigrationRequest = async (
   const toMails = [];
   const ccMails = [];
 
-  if (!isFilteredRoleMatching) {
+  if (!isHigherLevelRoleMatched) {
     const practiceManager = await findPracticeManager(
       toUser.userId,
       toUser.practice
@@ -625,7 +625,7 @@ const acceptMigrationRequest = async (
     ccMails.push("mobility@avasoft.com");
   }
 
-  if (isFilteredRoleMatching) {
+  if (isHigherLevelRoleMatched) {
     toMails.push(toUser.mail.toLocaleLowerCase());
     ccMails.push("mobility@avasoft.com");
   }
@@ -741,7 +741,7 @@ const rejectMigrationRequest = async (
     return { code: 404, message: "To user not found" };
   }
 
-  const isFilteredRoleMatching = HIGHER_LEVEL_ROLES.includes(
+  const isHigherLevelRoleMatched = HIGHER_LEVEL_ROLES.includes(
     toUser.role.toLocaleLowerCase()
   );
 
@@ -753,7 +753,7 @@ const rejectMigrationRequest = async (
   const toMails = [];
   const ccMails = [];
 
-  if (!isFilteredRoleMatching) {
+  if (!isHigherLevelRoleMatched) {
     const practiceManager = await findPracticeManager(
       toUser.userId,
       toUser.practice
@@ -774,7 +774,7 @@ const rejectMigrationRequest = async (
     ccMails.push("mobility@avasoft.com");
   }
 
-  if (isFilteredRoleMatching) {
+  if (isHigherLevelRoleMatched) {
     toMails.push(toUser.mail.toLocaleLowerCase());
     ccMails.push("mobility@avasoft.com");
   }
