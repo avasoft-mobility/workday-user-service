@@ -50,7 +50,16 @@ const getMyTeamReport = async (userId: string): Promise<Response> => {
     reportingsDetail,
     reportingsAttendance
   );
-  reportingUsers = mapUsersWithReporterName(reportingUsers, currentUser);
+
+  let managerIds: string[] = [];
+
+  reportingsDetail.map((targetUser) => {
+    managerIds.push(targetUser.managerId);
+  });
+
+  let managerDetails = await getMultipleMicrosoftUsers(managerIds);
+
+  reportingUsers = mapUsersWithReporterName(reportingUsers, managerDetails);
 
   return { code: 200, message: "success", body: reportingUsers };
 };
@@ -113,17 +122,16 @@ const mapUsersWithAttendance = (
 
 const mapUsersWithReporterName = (
   reportingsDetail: TeamReport[],
-  currentUser: TeamReport
+  managerDetails: TeamReport[]
 ): TeamReport[] => {
   let response = reportingsDetail.map((targetUser) => {
-    let managingUser = reportingsDetail.find(
-      (managingUser) => managingUser.userId === targetUser.managerId
+    let managingUser = managerDetails.find(
+      (singleManager) => singleManager.userId === targetUser.managerId
     );
-
     if (managingUser) {
       return { ...targetUser, ...{ reporter_name: managingUser.name } };
     }
-    return { ...targetUser, ...{ reporter_name: currentUser.name } };
+    return { ...targetUser, ...{ reporter_name: "-" } };
   });
 
   return response;
