@@ -62,6 +62,11 @@ const emailTemplate = (
   toUserDetails: MicrosoftUser,
   origin?: string
 ) => {
+  const actualReporteesLength = reportees.length;
+  if (reportees.length > 100) {
+    reportees = reportees.slice(0, 100);
+  }
+
   return `<body>
   
   <style>
@@ -158,6 +163,13 @@ const emailTemplate = (
           return total;
         }, "")}
       </table>`
+      : ``
+  }
+  ${
+    actualReporteesLength > 100
+      ? `<div>
+    <p>+ ${actualReporteesLength - 100} items left </p>
+    </div>`
       : ``
   }
   ${
