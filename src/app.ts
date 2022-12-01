@@ -27,24 +27,24 @@ mongoose.connection.on("connected", (err, res) => {
 
 app.use("/users", microsoftUserRouter);
 
-// const functionNames = JSON.parse(process.env.LAMBDA_FUNCTION_NAMES!);
-// app.use(
-//   `/users/*/functions/${functionNames.USERS}/invocations`,
-//   (req: Request, res: Response) => {
-//     const payload = JSON.parse(Buffer.from(req.body).toString());
-//     (app as any).runMiddleware(
-//       payload.path,
-//       {
-//         method: payload.httpMethod,
-//         body: payload.body,
-//         query: payload.queryParams,
-//       },
-//       function (code: any, data: any) {
-//         res.status(code).json(data);
-//       }
-//     );
-//   }
-// );
+const functionNames = JSON.parse(process.env.LAMBDA_FUNCTION_NAMES!);
+app.use(
+  `/users/*/functions/${functionNames.USERS}/invocations`,
+  (req: Request, res: Response) => {
+    const payload = JSON.parse(Buffer.from(req.body).toString());
+    (app as any).runMiddleware(
+      payload.path,
+      {
+        method: payload.httpMethod,
+        body: payload.body,
+        query: payload.queryParams,
+      },
+      function (code: any, data: any) {
+        res.status(code).json(data);
+      }
+    );
+  }
+);
 
 app.get("/", (request: Request, response: Response) => {
   return response.send("Backend is fine");
