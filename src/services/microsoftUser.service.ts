@@ -393,7 +393,6 @@ const updateAcknowledgementDetails = async (
   }
   ccMailIds.push(requestedUser.mail.toLocaleLowerCase());
 
-
   const reporteeDetails = await getReporteeDetails(migrationDetails.reportees);
   const directManager = await findDirectManager(requestedUser.managerId);
   if (!directManager) {
@@ -745,7 +744,7 @@ const findPracticeManager = async (
   const result = await microsoftUsersSchema.findOne({
     reportings: userId,
     practice: userPractice,
-    role: "Practice Head",
+    role: { $regex: /practice/i },
   });
   return result as MicrosoftUser;
 };
