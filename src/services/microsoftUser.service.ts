@@ -22,6 +22,17 @@ interface Response {
   body: TeamReport[];
 }
 
+const FILTERED_ROLE = [
+  "practice head",
+  "hr",
+  "hr manager",
+  "hr manager head",
+  "human resource executive",
+  "ceo",
+  "head - hr",
+  "centre head - chennai",
+];
+
 const getMyTeamReport = async (userId: string): Promise<Response> => {
   let reportingUsers: TeamReport[] = [];
   if (!userId) {
@@ -295,10 +306,13 @@ const requestReporteesMigration = async (
     return { code: 400, message: "To user is required" };
   }
 
+  const isFilteredRoleMatching = FILTERED_ROLE.includes(
+    toUser.role.toLocaleLowerCase()
+  );
   var reportees = await getReporteeDetails(requestReporteeIds);
 
   const toUserId = toUser.userId as string;
-  const status = "requested";
+  const status = isFilteredRoleMatching ? "acknowledged" : "requested";
 
   reportees = reportees.filter(
     (value, index, self) =>
@@ -326,16 +340,11 @@ const requestReporteesMigration = async (
     reportees: requestReporteeIds,
     previousReportees: toUserReportees,
     status: status,
+    acknowledgedBy: isFilteredRoleMatching ? "-" : undefined,
   });
 
   if (!result) {
     return { code: 400, message: "Creating migration data failed" };
-  }
-
-  const practiceManager = await findPracticeManager(toUserId, toUser.practice);
-  const directManager = await findDirectManager(toUser.managerId);
-  if (!directManager) {
-    return { code: 404, message: "Direct Manger not found" };
   }
 
   const greetings = "Hi Team";
@@ -346,15 +355,31 @@ const requestReporteesMigration = async (
   const toMails = [];
   const ccMails = [];
 
-  if (practiceManager) {
-    practiceManager.mail.toLocaleLowerCase() !==
-    directManager.mail.toLocaleLowerCase()
-      ? ccMails.push(practiceManager.mail.toLocaleLowerCase())
-      : null;
+  if (!isFilteredRoleMatching) {
+    const practiceManager = await findPracticeManager(
+      toUserId,
+      toUser.practice
+    );
+    const directManager = await findDirectManager(toUser.managerId);
+    if (!directManager) {
+      return { code: 404, message: "Direct Manger not found" };
+    }
+
+    if (practiceManager) {
+      practiceManager.mail.toLocaleLowerCase() !==
+      directManager.mail.toLocaleLowerCase()
+        ? ccMails.push(practiceManager.mail.toLocaleLowerCase())
+        : null;
+    }
+    toMails.push(directManager.mail.toLocaleLowerCase());
+    ccMails.push(toUser.mail.toLocaleLowerCase());
+    ccMails.push("mobility@avasoft.com");
   }
-  toMails.push(directManager.mail.toLocaleLowerCase());
-  ccMails.push(toUser.mail.toLocaleLowerCase());
-  ccMails.push("mobility@avasoft.com");
+
+  if (isFilteredRoleMatching) {
+    toMails.push("mobility@avasoft.com");
+    ccMails.push(toUser.mail.toLocaleLowerCase());
+  }
 
   const mailResponse: MailResponse = await sendMigrationMail(
     greetings,
@@ -567,14 +592,9 @@ const acceptMigrationRequest = async (
     return { code: 404, message: "To user not found" };
   }
 
-  const practiceManager = await findPracticeManager(
-    toUser.userId,
-    toUser.practice
+  const isFilteredRoleMatching = FILTERED_ROLE.includes(
+    toUser.role.toLocaleLowerCase()
   );
-  const directManager = await findDirectManager(toUser.managerId);
-  if (!directManager) {
-    return { code: 404, message: "Direct Manger not found" };
-  }
 
   const greetings = `Hi ${toUser.name}`;
   const mailType = "accepted";
@@ -583,15 +603,31 @@ const acceptMigrationRequest = async (
   const toMails = [];
   const ccMails = [];
 
-  if (practiceManager) {
-    practiceManager.mail.toLocaleLowerCase() !==
-    directManager.mail.toLocaleLowerCase()
-      ? ccMails.push(practiceManager.mail.toLocaleLowerCase())
-      : null;
+  if (!isFilteredRoleMatching) {
+    const practiceManager = await findPracticeManager(
+      toUser.userId,
+      toUser.practice
+    );
+    const directManager = await findDirectManager(toUser.managerId);
+    if (!directManager) {
+      return { code: 404, message: "Direct Manger not found" };
+    }
+
+    if (practiceManager) {
+      practiceManager.mail.toLocaleLowerCase() !==
+      directManager.mail.toLocaleLowerCase()
+        ? ccMails.push(practiceManager.mail.toLocaleLowerCase())
+        : null;
+    }
+    toMails.push(toUser.mail.toLocaleLowerCase());
+    ccMails.push(directManager.mail.toLocaleLowerCase());
+    ccMails.push("mobility@avasoft.com");
   }
-  toMails.push(toUser.mail.toLocaleLowerCase());
-  ccMails.push(directManager.mail.toLocaleLowerCase());
-  ccMails.push("mobility@avasoft.com");
+
+  if (isFilteredRoleMatching) {
+    toMails.push(toUser.mail.toLocaleLowerCase());
+    ccMails.push("mobility@avasoft.com");
+  }
 
   const mailResponse = await sendMigrationMail(
     greetings,
@@ -704,14 +740,9 @@ const rejectMigrationRequest = async (
     return { code: 404, message: "To user not found" };
   }
 
-  const practiceManager = await findPracticeManager(
-    toUser.userId,
-    toUser.practice
+  const isFilteredRoleMatching = FILTERED_ROLE.includes(
+    toUser.role.toLocaleLowerCase()
   );
-  const directManager = await findDirectManager(toUser.managerId);
-  if (!directManager) {
-    return { code: 404, message: "Direct Manger not found" };
-  }
 
   const greetings = `Hi ${toUser.name}`;
   const mailType = "rejected";
@@ -721,15 +752,31 @@ const rejectMigrationRequest = async (
   const toMails = [];
   const ccMails = [];
 
-  if (practiceManager) {
-    practiceManager.mail.toLocaleLowerCase() !==
-    directManager.mail.toLocaleLowerCase()
-      ? ccMails.push(practiceManager.mail.toLocaleLowerCase())
-      : null;
+  if (!isFilteredRoleMatching) {
+    const practiceManager = await findPracticeManager(
+      toUser.userId,
+      toUser.practice
+    );
+    const directManager = await findDirectManager(toUser.managerId);
+    if (!directManager) {
+      return { code: 404, message: "Direct Manger not found" };
+    }
+
+    if (practiceManager) {
+      practiceManager.mail.toLocaleLowerCase() !==
+      directManager.mail.toLocaleLowerCase()
+        ? ccMails.push(practiceManager.mail.toLocaleLowerCase())
+        : null;
+    }
+    toMails.push(toUser.mail.toLocaleLowerCase());
+    ccMails.push(directManager.mail.toLocaleLowerCase());
+    ccMails.push("mobility@avasoft.com");
   }
-  toMails.push(toUser.mail.toLocaleLowerCase());
-  ccMails.push(directManager.mail.toLocaleLowerCase());
-  ccMails.push("mobility@avasoft.com");
+
+  if (isFilteredRoleMatching) {
+    toMails.push(toUser.mail.toLocaleLowerCase());
+    ccMails.push("mobility@avasoft.com");
+  }
 
   const mailResponse = await sendMigrationMail(
     greetings,
