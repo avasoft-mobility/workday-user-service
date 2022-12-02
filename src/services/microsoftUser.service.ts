@@ -306,12 +306,10 @@ const requestReporteesMigration = async (
     };
   }
 
-  reportees.map((singleReportee) => {
-    let reportingsExcluded = toUser.reportings.find(
-      (singleReporting) => singleReporting === singleReportee.userId
-    );
-    if (reportingsExcluded) {
-      removedReportees.push(reportingsExcluded);
+  toUserReportees.map((singleUser) => {
+    const userExists = requestReporteeIds.includes(singleUser);
+    if (!userExists) {
+      removedReportees.push(singleUser);
     }
   });
 
