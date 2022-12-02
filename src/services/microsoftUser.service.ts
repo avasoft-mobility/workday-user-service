@@ -14,25 +14,17 @@ import TeamReport from "../models/TeamReport.model";
 import microsoftUserOverrideSchema from "../schema/microsoftUserOverrideSchema";
 import microsoftUsersSchema from "../schema/microsoftUserSchema";
 import alterReporteeList from "../helpers/Utilities";
+import dotenv from "dotenv";
 const axios = require("axios");
 
+dotenv.config();
 interface Response {
   code: number;
   message: string;
   body: TeamReport[];
 }
 
-const HIGHER_LEVEL_ROLES = [
-  "practice head",
-  "hr",
-  "hr manager",
-  "hr manager head",
-  "human resource executive",
-  "ceo",
-  "head - hr",
-  "centre head - chennai",
-  "cto",
-];
+const HIGHER_LEVEL_ROLES = JSON.parse(process.env.HIGHER_LEVEL_ROLES!);
 
 const getMyTeamReport = async (userId: string): Promise<Response> => {
   let reportingUsers: TeamReport[] = [];
