@@ -228,12 +228,18 @@ const getMigration = async (
     };
   }
 
+  let rejectedReporteeIds = result.removedReportees;
+  rejectedReporteeIds = rejectedReporteeIds.filter((id) => {
+    return id !== result.toUserId;
+  });
+
   let reporteeIds = result.reportees;
   reporteeIds = reporteeIds.filter((id) => {
     return id !== result.toUserId;
   });
 
   const microsoftUsers = await getReporteeDetails(reporteeIds);
+  const removedMicrosoftUsers = await getReporteeDetails(rejectedReporteeIds);
 
   const toUser = await microsoftUsersSchema.findOne({
     userId: result.toUserId,
@@ -243,6 +249,7 @@ const getMigration = async (
     _id: result._id,
     toUser: toUser as MicrosoftUser,
     reportees: microsoftUsers as MicrosoftUser[],
+    removedReportees: removedMicrosoftUsers,
     status: result.status,
     mailRequestId: result.mailRequestId,
     acknowledgedBy: result.acknowledgedBy ? result.acknowledgedBy : undefined,

@@ -16,11 +16,13 @@ interface Base {
 interface MicrosoftUserOverride extends Base {
   toUserId: string;
   reportees: string[];
+  removedReportees: string[];
 }
 
 interface PopulateMicrosoftUserOverride extends Base {
   toUser: MicrosoftUser;
   reportees: MicrosoftUser[];
+  removedReportees: MicrosoftUser[];
 }
 
 export { MicrosoftUserOverride, PopulateMicrosoftUserOverride };
