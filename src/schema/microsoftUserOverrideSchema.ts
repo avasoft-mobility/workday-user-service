@@ -27,6 +27,10 @@ const microsoftUsersOverrides = new mongoose.Schema(
     rejectedBy: {
       type: String,
     },
+    removedReportees: {
+      type: [String],
+      default: [],
+    },
     isActive: {
       type: Boolean,
       default: false,

@@ -272,7 +272,7 @@ const requestReporteesMigration = async (
   if (!toUser) {
     return { code: 400, message: "To user is required" };
   }
-
+  let removedReportees: string[] = [];
   var reportees = await getReporteeDetails(requestReporteeIds);
 
   const toUserId = toUser.userId as string;
@@ -299,10 +299,20 @@ const requestReporteesMigration = async (
     };
   }
 
+  reportees.map((singleReportee) => {
+    let reportingsExcluded = toUser.reportings.find(
+      (singleReporting) => singleReporting === singleReportee.userId
+    );
+    if (reportingsExcluded) {
+      removedReportees.push(reportingsExcluded);
+    }
+  });
+
   const result = await microsoftUserOverrideSchema.create({
     toUserId: toUserId,
     reportees: requestReporteeIds,
     status: status,
+    removedReportees: removedReportees,
   });
 
   if (!result) {
