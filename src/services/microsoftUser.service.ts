@@ -13,6 +13,7 @@ import {
 import TeamReport from "../models/TeamReport.model";
 import microsoftUserOverrideSchema from "../schema/microsoftUserOverrideSchema";
 import microsoftUsersSchema from "../schema/microsoftUserSchema";
+import getModifiedReporteeList from "../helpers/Utilities";
 const axios = require("axios");
 
 interface Response {
@@ -233,16 +234,36 @@ const getMigration = async (
     return id !== result.toUserId;
   });
 
-  const microsoftUsers = await getReporteeDetails(reporteeIds);
+  const reportees = await getReporteeDetails(reporteeIds);
 
   const toUser = await microsoftUsersSchema.findOne({
     userId: result.toUserId,
   });
 
+  if (!toUser) {
+    return {
+      code: 404,
+      message: `To User Not Exist`,
+    };
+  }
+
+  //Remove to user Id from the reporting list
+  toUser.reportings = toUser.reportings.filter((reporteeId: string) => {
+    return reporteeId !== toUser.userId;
+  });
+
+  const modifiedReporteeList = await getModifiedReporteeList(
+    toUser.reportings,
+    reportees
+  );
+
   const MicrosoftUserOverridePopulated = {
     _id: result._id,
     toUser: toUser as MicrosoftUser,
-    reportees: microsoftUsers as MicrosoftUser[],
+    existingReportees:
+      modifiedReporteeList.existingReportees as MicrosoftUser[],
+    newReportees: modifiedReporteeList.newReportees as MicrosoftUser[],
+    removedReportees: modifiedReporteeList.removedReportees as MicrosoftUser[],
     status: result.status,
     mailRequestId: result.mailRequestId,
     acknowledgedBy: result.acknowledgedBy ? result.acknowledgedBy : undefined,

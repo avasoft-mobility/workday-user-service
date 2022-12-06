@@ -20,7 +20,9 @@ interface MicrosoftUserOverride extends Base {
 
 interface PopulateMicrosoftUserOverride extends Base {
   toUser: MicrosoftUser;
-  reportees: MicrosoftUser[];
+  existingReportees: MicrosoftUser[];
+  newReportees: MicrosoftUser[];
+  removedReportees: MicrosoftUser[];
 }
 
 export { MicrosoftUserOverride, PopulateMicrosoftUserOverride };
