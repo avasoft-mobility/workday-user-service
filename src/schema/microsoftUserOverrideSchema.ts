@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import {MicrosoftUserOverride} from "../models/microsoftUserOverride.model";
+import { MicrosoftUserOverride } from "../models/microsoftUserOverride.model";
 
 const microsoftUsersOverrides = new mongoose.Schema(
   {
@@ -8,6 +8,10 @@ const microsoftUsersOverrides = new mongoose.Schema(
       required: true,
     },
     reportees: {
+      type: [String],
+      required: true,
+    },
+    previousReportees: {
       type: [String],
       required: true,
     },
