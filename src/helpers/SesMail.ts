@@ -1,5 +1,6 @@
 import MicrosoftUser from "../models/microsoftUser.model";
 import dotenv from "dotenv";
+import AlteredReporteeList from "../models/AlteredReporteeList.model";
 dotenv.config();
 
 const SES_CONFIG = {
@@ -17,7 +18,7 @@ let sendMigrationMail = (
   mailSubject: string,
   migrationId: string,
   message: string,
-  reportees: MicrosoftUser[],
+  alteredReporteeList: AlteredReporteeList,
   toUserDetails: MicrosoftUser,
   ccUsers: string[],
   toUsers: string[],
@@ -38,7 +39,7 @@ let sendMigrationMail = (
             mailRequest,
             migrationId,
             message,
-            reportees,
+            alteredReporteeList,
             toUserDetails,
             origin
           ),
@@ -58,134 +59,228 @@ const emailTemplate = (
   mailRequest: string,
   migrationId: string,
   message: string,
-  reportees: MicrosoftUser[],
+  alteredReporteeList: AlteredReporteeList,
   toUserDetails: MicrosoftUser,
   origin?: string
 ) => {
-  const actualReporteesLength = reportees.length;
-  if (reportees.length > 100) {
-    reportees = reportees.slice(0, 100);
+  const actualExistingReportees = alteredReporteeList.existingReportees.length;
+  if (actualExistingReportees > 50) {
+    alteredReporteeList.existingReportees =
+      alteredReporteeList.existingReportees.slice(0, 50);
+  }
+
+  const actualNewlyAddedReportees = alteredReporteeList.newReportees.length;
+  if (actualNewlyAddedReportees > 50) {
+    alteredReporteeList.newReportees = alteredReporteeList.newReportees.slice(
+      0,
+      50
+    );
+  }
+
+  const actualRemovedReportees = alteredReporteeList.removedReportees.length;
+  if (actualRemovedReportees > 50) {
+    alteredReporteeList.removedReportees =
+      alteredReporteeList.removedReportees.slice(0, 50);
   }
 
   return `<body>
-  
-  <style>
-    * {
-      font-family: Arial, Helvetica, sans-serif;
-    }
-  
-    #button {
-      float: left;
-      text-decoration: none;
-      background-color:#0F9D58;
-      color: #ffffff;
-      padding: 15px 20px ;
-      border-radius: 4px;
-    }
-  
-    #reject {
-      border-radius: 4px;
-      border: 1px solid;
-      text-decoration: none;
-      color: #DB4437;
-      float: left;
-      margin:0px 15px;
-      padding: 10px 20px;
-    }
-  
-    #buttons {
-      margin-top:25px;
-    }
-  
-    #customers {
-      border-collapse: collapse;
-      width: 100%;
-      font-size: 12px;
-    }
-  
-    #customers td,
-    #customers th {
-      border: 1px solid #ddd;
-      padding: 8px;
-    }
-  
-    #customers tr:nth-child(even) {
-      background-color: #f2f2f2;
-    }
-  
-    #customers tr:hover {
-      background-color: #ddd;
-    }
-  
-    #customers th {
-      padding-top: 12px;
-      padding-bottom: 12px;
-      text-align: left;
-      background-color: #04AA6D;
-      color: white;
-    }
-  
-    #redirectionLink {
-      margin-top : 30px
-    }
-  </style>
-  
-  
-  <h4 style="margin-bottom: 0;">${teamName},</h4>
-  ${
-    reportees.length !== 0
-      ? `<p>${message}</p>`
-      : `<p>The reportee(s) exclusion request has been sent!</p>`
+
+<style>
+  * {
+    font-family: Arial, Helvetica, sans-serif;
   }
-  <br>
-  <h5>Requested User : </h5>
-  <p>Name: ${toUserDetails?.name}</p>
-  <p>E-Mail: ${toUserDetails?.mail}</p>
-  <p>Domain: ${toUserDetails?.practice}</p>
-  <br>
-  ${reportees.length !== 0 ? `<h5>Reportees:</h5>` : ``}
-  ${
-    reportees.length !== 0
-      ? `<table id="customers">
-        <tr>
-          <th>S.No</th>
-          <th>Name</th>
-          <th>E-Mail</th>
-          <th>Domain</th>
-        </tr>
-        ${reportees?.reduce<string>((total, char, index) => {
+
+  #button {
+    float: left;
+    text-decoration: none;
+    background-color:#0F9D58;
+    color: #ffffff;
+    padding: 15px 20px ;
+    border-radius: 4px;
+  }
+
+  #reject {
+    border-radius: 4px;
+    border: 1px solid;
+    text-decoration: none;
+    color: #DB4437;
+    float: left;
+    margin:0px 15px;
+    padding: 10px 20px;
+  }
+
+  #buttons {
+    margin-top:25px;
+  }
+
+  #customers {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 12px;
+  }
+
+  #customers td,
+  #customers th {
+    border: 1px solid #ddd;
+    padding: 8px;
+  }
+
+  #customers tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }
+
+  #customers tr:hover {
+    background-color: #ddd;
+  }
+
+  #customers th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: left;
+    background-color: #04AA6D;
+    color: white;
+  }
+
+  #redirectionLink {
+    margin-top : 30px
+  }
+</style>
+
+
+<h4 style="margin-bottom: 0;">${teamName},</h4>
+<p>${message}</p>  
+
+<br>
+<h5>Requested User : </h5>
+<p>Name: ${toUserDetails?.name}</p>
+<p>E-Mail: ${toUserDetails?.mail}</p>
+<p>Domain: ${toUserDetails?.practice}</p>
+<br>
+${
+  alteredReporteeList.existingReportees.length !== 0
+    ? `<h5>Existing Reportees:</h5>`
+    : ``
+}
+${
+  alteredReporteeList.existingReportees.length !== 0
+    ? `<table id="customers">
+      <tr>
+        <th>S.No</th>
+        <th>Name</th>
+        <th>E-Mail</th>
+        <th>Domain</th>
+      </tr>
+      ${alteredReporteeList.existingReportees?.reduce<string>(
+        (total, char, index) => {
           total += `<tr>
-      <td>${index + 1}</td>
-      <td>${char.name}</td>
-      <td>${char.mail}</td>
-      <td>${char.practice}</td>
-      </tr>`;
+    <td>${index + 1}</td>
+    <td>${char.name}</td>
+    <td>${char.mail}</td>
+    <td>${char.practice}</td>
+    </tr>`;
           return total;
-        }, "")}
-      </table>`
-      : ``
-  }
-  ${
-    actualReporteesLength > 100
-      ? `<div>
-    <p>+ ${actualReporteesLength - 100} items left </p>
-    </div>`
-      : ``
-  }
-  ${
-    mailRequest === "requested" || mailRequest === "acknowledged"
-      ? `<div id= "redirectionLink">
-            <h4 style="margin-bottom: 0;display: inline">Click the link to acknowledge / accept this request: </h4>
-            <br>
-            ${redirectionLink(migrationId, origin)}
-          </div>`
-      : ``
-  }
-  <div>
-  <p style ="margin-top:50px;">Regards,</p>
-  <p>WorkdayTeam</p>
-  </div>   
-  </body>`;
+        },
+        ""
+      )}
+    </table>`
+    : ``
+}
+${
+  actualExistingReportees > 50
+    ? `<div>
+  <p>+ ${actualExistingReportees - 50} items left </p>
+  </div>`
+    : ``
+}
+
+<br>
+${
+  alteredReporteeList.newReportees.length !== 0 ? `<h5>New Reportees:</h5>` : ``
+}
+${
+  alteredReporteeList.newReportees.length !== 0
+    ? `<table id="customers">
+      <tr>
+        <th>S.No</th>
+        <th>Name</th>
+        <th>E-Mail</th>
+        <th>Domain</th>
+      </tr>
+      ${alteredReporteeList.newReportees?.reduce<string>(
+        (total, char, index) => {
+          total += `<tr>
+    <td>${index + 1}</td>
+    <td>${char.name}</td>
+    <td>${char.mail}</td>
+    <td>${char.practice}</td>
+    </tr>`;
+          return total;
+        },
+        ""
+      )}
+    </table>`
+    : ``
+}
+${
+  actualNewlyAddedReportees > 50
+    ? `<div>
+  <p>+ ${actualNewlyAddedReportees - 50} items left </p>
+  </div>`
+    : ``
+}
+
+<br>
+${
+  alteredReporteeList.removedReportees.length !== 0
+    ? `<h5>Removed Reportees:</h5>`
+    : ``
+}
+${
+  alteredReporteeList.removedReportees.length !== 0
+    ? `<table id="customers">
+      <tr>
+        <th>S.No</th>
+        <th>Name</th>
+        <th>E-Mail</th>
+        <th>Domain</th>
+      </tr>
+      ${alteredReporteeList.removedReportees?.reduce<string>(
+        (total, char, index) => {
+          total += `<tr>
+    <td>${index + 1}</td>
+    <td>${char.name}</td>
+    <td>${char.mail}</td>
+    <td>${char.practice}</td>
+    </tr>`;
+          return total;
+        },
+        ""
+      )}
+    </table>`
+    : ``
+}
+${
+  actualRemovedReportees > 50
+    ? `<div>
+  <p>+ ${actualRemovedReportees - 50} items left </p>
+  </div>`
+    : ``
+}
+
+${
+  mailRequest === "requested" || mailRequest === "acknowledged"
+    ? `<div id= "redirectionLink">
+          <h4 style="margin-bottom: 0;display: inline">Click the link to acknowledge / accept this request: </h4>
+          <br>
+          ${redirectionLink(migrationId, origin)}
+        </div>`
+    : ``
+}
+<div>
+<p style ="margin-top:50px;">Regards,</p>
+<p>WorkdayTeam</p>
+</div>   
+</body>`;
 };
 
 const redirectionLink = (migrationId: string, origin?: string) => {

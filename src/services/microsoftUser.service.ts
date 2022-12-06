@@ -288,7 +288,7 @@ const getMigration = async (
 
 const requestReporteesMigration = async (
   toUser: MicrosoftUser,
-  requestReporteeIds: string[],
+  requestedReporteeIds: string[],
   origin: string
 ): Promise<{
   code: number;
@@ -302,25 +302,32 @@ const requestReporteesMigration = async (
   const isHigherLevelRoleMatched = HIGHER_LEVEL_ROLES.includes(
     toUser.role.toLocaleLowerCase()
   );
-  var reportees = await getReporteeDetails(requestReporteeIds);
+  let reportees = await getReporteeDetails(requestedReporteeIds);
 
   const toUserId = toUser.userId as string;
   const status = isHigherLevelRoleMatched ? "acknowledged" : "requested";
 
+  //Remove duplicates
   reportees = reportees.filter(
     (value, index, self) =>
       index === self.findIndex((t) => t.userId === value.userId)
   );
+
+  // Remove to user Id from the requested reportee Ids
   reportees = reportees.filter((reportee) => {
     return reportee.userId !== toUserId;
   });
 
-  let toUserReportees = toUser.reportings;
-  toUserReportees = toUserReportees.filter((id) => {
+  let toUserReporteeIds = toUser.reportings;
+  toUserReporteeIds = toUserReporteeIds.filter((id) => {
     return id !== toUserId;
   });
 
-  if (requestReporteeIds.sort().join("") === toUserReportees.sort().join("")) {
+  const reporteeIds = reportees.map((reportee) => {
+    return reportee.userId;
+  });
+
+  if (reporteeIds.sort().join("") === toUserReporteeIds.sort().join("")) {
     return {
       code: 400,
       message:
@@ -328,10 +335,15 @@ const requestReporteesMigration = async (
     };
   }
 
+  const alteredReporteeList = await alterReporteeList(
+    toUserReporteeIds,
+    reportees
+  );
+
   const result = await microsoftUserOverrideSchema.create({
     toUserId: toUserId,
-    reportees: requestReporteeIds,
-    previousReportees: toUserReportees,
+    reportees: reporteeIds,
+    previousReportees: toUserReporteeIds,
     status: status,
     acknowledgedBy: isHigherLevelRoleMatched ? "-" : undefined,
   });
@@ -380,7 +392,7 @@ const requestReporteesMigration = async (
     mailSubject,
     migrationId,
     message,
-    reportees,
+    alteredReporteeList,
     toUser,
     ccMails,
     toMails,
@@ -418,13 +430,10 @@ const updateAcknowledgementDetails = async (
   message?: string;
   body?: MicrosoftUserOverride;
 }> => {
-  const response = await microsoftUserOverrideSchema.findByIdAndUpdate(
-    migrationDetails._id,
-    {
-      status: "acknowledged",
-      acknowledgedBy: user.name,
-    }
-  );
+  await microsoftUserOverrideSchema.findByIdAndUpdate(migrationDetails._id, {
+    status: "acknowledged",
+    acknowledgedBy: user.name,
+  });
 
   const mailSubject = `Migration Request - [#${migrationDetails._id}] - Acknowledged`;
   const mailBody =
@@ -442,7 +451,12 @@ const updateAcknowledgementDetails = async (
   }
   ccMailIds.push(requestedUser.mail.toLocaleLowerCase());
 
-  const reporteeDetails = await getReporteeDetails(migrationDetails.reportees);
+  const reportees = await getReporteeDetails(migrationDetails.reportees);
+  const alteredReporteeList = await alterReporteeList(
+    migrationDetails.previousReportees,
+    reportees
+  );
+
   const directManager = await findDirectManager(requestedUser.managerId);
   if (!directManager) {
     return {
@@ -470,7 +484,7 @@ const updateAcknowledgementDetails = async (
     mailSubject,
     migrationDetails._id,
     mailBody,
-    reporteeDetails,
+    alteredReporteeList,
     requestedUser!,
     ccMailIds,
     ["mobility@avasoft.com"],
@@ -573,6 +587,11 @@ const acceptMigrationRequest = async (
   let reporteeIds = result.reportees;
   reporteeIds = [...new Set(reporteeIds)];
   let reportees = await getReporteeDetails(reporteeIds);
+  const alteredReporteeList = await alterReporteeList(
+    result.previousReportees,
+    reportees
+  );
+
   reporteeIds.push(result.toUserId);
 
   const migrationResult = await migrateReportees(result.toUserId, reporteeIds);
@@ -628,7 +647,7 @@ const acceptMigrationRequest = async (
     mailSubject,
     migrationId,
     message,
-    reportees,
+    alteredReporteeList,
     toUser,
     ccMails,
     toMails
@@ -727,6 +746,10 @@ const rejectMigrationRequest = async (
   let reporteeIds = result.reportees;
   reporteeIds = [...new Set(reporteeIds)];
   let reportees = await getReporteeDetails(reporteeIds);
+  const alteredReporteeList = await alterReporteeList(
+    result.previousReportees,
+    reportees
+  );
 
   const toUser = await getUserById(result.toUserId);
   if (!toUser) {
@@ -777,7 +800,7 @@ const rejectMigrationRequest = async (
     mailSubject,
     migrationId,
     message,
-    reportees,
+    alteredReporteeList,
     toUser,
     ccMails,
     toMails
