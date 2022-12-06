@@ -169,27 +169,27 @@ const emailTemplate = (
 <br>
 <h5>Requested User : </h5>
 <p>Name: ${toUserDetails?.name}</p>
-<p>E-Mail: ${toUserDetails?.mail}</p>
+<p>E-mail: ${toUserDetails?.mail.toLocaleLowerCase()}</p>
 <p>Domain: ${toUserDetails?.practice}</p>
 
 <br>
 ${
-  alteredReporteeList.existingReportees.length !== 0
-    ? `<h5>Existing Reportees:</h5>
+  alteredReporteeList.removedReportees.length !== 0
+    ? `<h5>Removed Reportees:</h5>
       <table id="customers">
       <tr>
-        <th id="slNoColumn">S.No</th>
-        <th id="nameColumn">Name</th>
-        <th id="mailColumn">E-Mail</th>
-        <th id="practiceColumn">Domain</th>
+      <th id="slNoColumn">S.No</th>
+      <th id="nameColumn">Name</th>
+      <th id="mailColumn">E-mail</th>
+      <th id="practiceColumn">Domain</th>
       </tr>
-      ${alteredReporteeList.existingReportees?.reduce<string>(
+      ${alteredReporteeList.removedReportees?.reduce<string>(
         (total, char, index) => {
           total += `<tr>
-    <td id="slNoColumn">${index + 1}</td>
-    <td id="nameColumn">${char.name}</td>
-    <td id="mailColumn">${char.mail}</td>
-    <td id="practiceColumn">${char.practice}</td>
+          <td id="slNoColumn">${index + 1}</td>
+          <td id="nameColumn">${char.name}</td>
+          <td id="mailColumn">${char.mail.toLocaleLowerCase()}</td>
+          <td id="practiceColumn">${char.practice}</td>
     </tr>`;
           return total;
         },
@@ -199,9 +199,9 @@ ${
     : ``
 }
 ${
-  actualExistingReportees > 50
+  actualRemovedReportees > 50
     ? `<div>
-  <p>+ ${actualExistingReportees - 50} items left </p>
+  <p>+ ${actualRemovedReportees - 50} items left </p>
   </div>`
     : ``
 }
@@ -214,7 +214,7 @@ ${
       <tr>
       <th id="slNoColumn">S.No</th>
       <th id="nameColumn">Name</th>
-      <th id="mailColumn">E-Mail</th>
+      <th id="mailColumn">E-mail</th>
       <th id="practiceColumn">Domain</th>
       </tr>
       ${alteredReporteeList.newReportees?.reduce<string>(
@@ -222,7 +222,7 @@ ${
           total += `<tr>
           <td id="slNoColumn">${index + 1}</td>
           <td id="nameColumn">${char.name}</td>
-          <td id="mailColumn">${char.mail}</td>
+          <td id="mailColumn">${char.mail.toLocaleLowerCase()}</td>
           <td id="practiceColumn">${char.practice}</td>
     </tr>`;
           return total;
@@ -242,22 +242,22 @@ ${
 
 <br>
 ${
-  alteredReporteeList.removedReportees.length !== 0
-    ? `<h5>Removed Reportees:</h5>
+  alteredReporteeList.existingReportees.length !== 0
+    ? `<h5>Existing Reportees:</h5>
       <table id="customers">
       <tr>
-      <th id="slNoColumn">S.No</th>
-      <th id="nameColumn">Name</th>
-      <th id="mailColumn">E-Mail</th>
-      <th id="practiceColumn">Domain</th>
+        <th id="slNoColumn">S.No</th>
+        <th id="nameColumn">Name</th>
+        <th id="mailColumn">E-mail</th>
+        <th id="practiceColumn">Domain</th>
       </tr>
-      ${alteredReporteeList.removedReportees?.reduce<string>(
+      ${alteredReporteeList.existingReportees?.reduce<string>(
         (total, char, index) => {
           total += `<tr>
-          <td id="slNoColumn">${index + 1}</td>
-          <td id="nameColumn">${char.name}</td>
-          <td id="mailColumn">${char.mail}</td>
-          <td id="practiceColumn">${char.practice}</td>
+    <td id="slNoColumn">${index + 1}</td>
+    <td id="nameColumn">${char.name}</td>
+    <td id="mailColumn">${char.mail.toLocaleLowerCase()}</td>
+    <td id="practiceColumn">${char.practice}</td>
     </tr>`;
           return total;
         },
@@ -267,9 +267,9 @@ ${
     : ``
 }
 ${
-  actualRemovedReportees > 50
+  actualExistingReportees > 50
     ? `<div>
-  <p>+ ${actualRemovedReportees - 50} items left </p>
+  <p>+ ${actualExistingReportees - 50} items left </p>
   </div>`
     : ``
 }

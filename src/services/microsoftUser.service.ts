@@ -331,7 +331,7 @@ const requestReporteesMigration = async (
     return {
       code: 400,
       message:
-        "Migration request failed due to requesting for the same reporting details",
+        "Migration request failed due to requesting for the same reporting details.",
     };
   }
 
