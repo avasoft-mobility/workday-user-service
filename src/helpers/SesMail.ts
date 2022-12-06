@@ -155,15 +155,12 @@ const emailTemplate = (
 <p>Name: ${toUserDetails?.name}</p>
 <p>E-Mail: ${toUserDetails?.mail}</p>
 <p>Domain: ${toUserDetails?.practice}</p>
+
 <br>
 ${
   alteredReporteeList.existingReportees.length !== 0
-    ? `<h5>Existing Reportees:</h5>`
-    : ``
-}
-${
-  alteredReporteeList.existingReportees.length !== 0
-    ? `<table id="customers">
+    ? `<h5>Existing Reportees:</h5>
+      <table id="customers">
       <tr>
         <th>S.No</th>
         <th>Name</th>
@@ -195,11 +192,9 @@ ${
 
 <br>
 ${
-  alteredReporteeList.newReportees.length !== 0 ? `<h5>New Reportees:</h5>` : ``
-}
-${
   alteredReporteeList.newReportees.length !== 0
-    ? `<table id="customers">
+    ? `<h5>New Reportees:</h5> 
+      <table id="customers">
       <tr>
         <th>S.No</th>
         <th>Name</th>
@@ -232,12 +227,8 @@ ${
 <br>
 ${
   alteredReporteeList.removedReportees.length !== 0
-    ? `<h5>Removed Reportees:</h5>`
-    : ``
-}
-${
-  alteredReporteeList.removedReportees.length !== 0
-    ? `<table id="customers">
+    ? `<h5>Removed Reportees:</h5>
+      <table id="customers">
       <tr>
         <th>S.No</th>
         <th>Name</th>
