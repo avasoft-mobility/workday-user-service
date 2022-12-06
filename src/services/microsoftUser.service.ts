@@ -324,6 +324,7 @@ const requestReporteesMigration = async (
   const result = await microsoftUserOverrideSchema.create({
     toUserId: toUserId,
     reportees: requestReporteeIds,
+    previousReportees: toUserReportees,
     status: status,
   });
 
