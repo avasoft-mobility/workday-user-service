@@ -144,6 +144,22 @@ const emailTemplate = (
   #redirectionLink {
     margin-top : 30px
   }
+
+  #slNoColumn {
+    width: 10%
+  }
+
+  #nameColumn {
+    width: 35%
+  }
+
+  #mailColumn {
+    width: 30%
+  }
+
+  #practiceColumn {
+    width: 25%
+  }
 </style>
 
 
@@ -162,18 +178,18 @@ ${
     ? `<h5>Existing Reportees:</h5>
       <table id="customers">
       <tr>
-        <th>S.No</th>
-        <th>Name</th>
-        <th>E-Mail</th>
-        <th>Domain</th>
+        <th id="slNoColumn">S.No</th>
+        <th id="nameColumn">Name</th>
+        <th id="mailColumn">E-Mail</th>
+        <th id="practiceColumn">Domain</th>
       </tr>
       ${alteredReporteeList.existingReportees?.reduce<string>(
         (total, char, index) => {
           total += `<tr>
-    <td>${index + 1}</td>
-    <td>${char.name}</td>
-    <td>${char.mail}</td>
-    <td>${char.practice}</td>
+    <td id="slNoColumn">${index + 1}</td>
+    <td id="nameColumn">${char.name}</td>
+    <td id="mailColumn">${char.mail}</td>
+    <td id="practiceColumn">${char.practice}</td>
     </tr>`;
           return total;
         },
@@ -196,18 +212,18 @@ ${
     ? `<h5>New Reportees:</h5> 
       <table id="customers">
       <tr>
-        <th>S.No</th>
-        <th>Name</th>
-        <th>E-Mail</th>
-        <th>Domain</th>
+      <th id="slNoColumn">S.No</th>
+      <th id="nameColumn">Name</th>
+      <th id="mailColumn">E-Mail</th>
+      <th id="practiceColumn">Domain</th>
       </tr>
       ${alteredReporteeList.newReportees?.reduce<string>(
         (total, char, index) => {
           total += `<tr>
-    <td>${index + 1}</td>
-    <td>${char.name}</td>
-    <td>${char.mail}</td>
-    <td>${char.practice}</td>
+          <td id="slNoColumn">${index + 1}</td>
+          <td id="nameColumn">${char.name}</td>
+          <td id="mailColumn">${char.mail}</td>
+          <td id="practiceColumn">${char.practice}</td>
     </tr>`;
           return total;
         },
@@ -230,18 +246,18 @@ ${
     ? `<h5>Removed Reportees:</h5>
       <table id="customers">
       <tr>
-        <th>S.No</th>
-        <th>Name</th>
-        <th>E-Mail</th>
-        <th>Domain</th>
+      <th id="slNoColumn">S.No</th>
+      <th id="nameColumn">Name</th>
+      <th id="mailColumn">E-Mail</th>
+      <th id="practiceColumn">Domain</th>
       </tr>
       ${alteredReporteeList.removedReportees?.reduce<string>(
         (total, char, index) => {
           total += `<tr>
-    <td>${index + 1}</td>
-    <td>${char.name}</td>
-    <td>${char.mail}</td>
-    <td>${char.practice}</td>
+          <td id="slNoColumn">${index + 1}</td>
+          <td id="nameColumn">${char.name}</td>
+          <td id="mailColumn">${char.mail}</td>
+          <td id="practiceColumn">${char.practice}</td>
     </tr>`;
           return total;
         },
