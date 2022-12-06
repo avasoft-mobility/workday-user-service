@@ -10,29 +10,41 @@ const alterReporteeList = async (
     userId: { $in: toUserReporteeIds },
   });
 
-  const existingReportees: MicrosoftUser[] = requestedReportees.filter(
-    (requestedReportee: MicrosoftUser) => {
+  const existingReportees: MicrosoftUser[] = requestedReportees
+    .filter((requestedReportee: MicrosoftUser) => {
       return toUserReportees.find((toUserReportee: MicrosoftUser) => {
         return toUserReportee.userId === requestedReportee.userId;
       });
-    }
-  );
+    })
+    .sort((a: MicrosoftUser, b: MicrosoftUser) => {
+      return a.name
+        .toLocaleLowerCase()
+        .localeCompare(b.name.toLocaleLowerCase());
+    });
 
-  const newReportees: MicrosoftUser[] = requestedReportees.filter(
-    (requestedReportee: MicrosoftUser) => {
+  const newReportees: MicrosoftUser[] = requestedReportees
+    .filter((requestedReportee: MicrosoftUser) => {
       return !toUserReportees.find((toUserReportee: MicrosoftUser) => {
         return toUserReportee.userId === requestedReportee.userId;
       });
-    }
-  );
+    })
+    .sort((a: MicrosoftUser, b: MicrosoftUser) => {
+      return a.name
+        .toLocaleLowerCase()
+        .localeCompare(b.name.toLocaleLowerCase());
+    });
 
-  const removedReportees: MicrosoftUser[] = toUserReportees.filter(
-    (toUserReportee: MicrosoftUser) => {
+  const removedReportees: MicrosoftUser[] = toUserReportees
+    .filter((toUserReportee: MicrosoftUser) => {
       return !requestedReportees.find((requestedReportee: MicrosoftUser) => {
         return toUserReportee.userId === requestedReportee.userId;
       });
-    }
-  );
+    })
+    .sort((a: MicrosoftUser, b: MicrosoftUser) => {
+      return a.name
+        .toLocaleLowerCase()
+        .localeCompare(b.name.toLocaleLowerCase());
+    });
 
   return {
     existingReportees: existingReportees,
