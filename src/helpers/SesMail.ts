@@ -209,7 +209,7 @@ ${
 <br>
 ${
   alteredReporteeList.newReportees.length !== 0
-    ? `<h5>New Reportees:</h5> 
+    ? `<h5>Newly Added Reportees:</h5> 
       <table id="customers">
       <tr>
       <th id="slNoColumn">S.No</th>
