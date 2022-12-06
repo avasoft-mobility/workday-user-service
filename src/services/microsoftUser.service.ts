@@ -248,12 +248,14 @@ const getMigration = async (
   }
 
   //Remove to user Id from the reporting list
-  toUser.reportings = toUser.reportings.filter((reporteeId: string) => {
-    return reporteeId !== toUser.userId;
-  });
+  result.previousReportees = result.previousReportees.filter(
+    (reporteeId: string) => {
+      return reporteeId !== toUser.userId;
+    }
+  );
 
   const alteredReporteeList = await alterReporteeList(
-    toUser.reportings,
+    result.previousReportees,
     reportees
   );
 
