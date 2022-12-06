@@ -13,7 +13,7 @@ import {
 import TeamReport from "../models/TeamReport.model";
 import microsoftUserOverrideSchema from "../schema/microsoftUserOverrideSchema";
 import microsoftUsersSchema from "../schema/microsoftUserSchema";
-import getModifiedReporteeList from "../helpers/Utilities";
+import alterReporteeList from "../helpers/Utilities";
 const axios = require("axios");
 
 interface Response {
@@ -252,7 +252,7 @@ const getMigration = async (
     return reporteeId !== toUser.userId;
   });
 
-  const modifiedReporteeList = await getModifiedReporteeList(
+  const alteredReporteeList = await alterReporteeList(
     toUser.reportings,
     reportees
   );
@@ -260,10 +260,9 @@ const getMigration = async (
   const MicrosoftUserOverridePopulated = {
     _id: result._id,
     toUser: toUser as MicrosoftUser,
-    existingReportees:
-      modifiedReporteeList.existingReportees as MicrosoftUser[],
-    newReportees: modifiedReporteeList.newReportees as MicrosoftUser[],
-    removedReportees: modifiedReporteeList.removedReportees as MicrosoftUser[],
+    existingReportees: alteredReporteeList.existingReportees as MicrosoftUser[],
+    newReportees: alteredReporteeList.newReportees as MicrosoftUser[],
+    removedReportees: alteredReporteeList.removedReportees as MicrosoftUser[],
     status: result.status,
     mailRequestId: result.mailRequestId,
     acknowledgedBy: result.acknowledgedBy ? result.acknowledgedBy : undefined,

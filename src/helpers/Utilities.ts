@@ -2,7 +2,7 @@ import MicrosoftUser from "../models/microsoftUser.model";
 import ModifiedReporteeList from "../models/ModifiedReporteeList.model";
 import microsoftUsers from "../schema/microsoftUserSchema";
 
-const getModifiedReporteeList = async (
+const alterReporteeList = async (
   toUserReporteeIds: string[],
   requestedReportees: MicrosoftUser[]
 ): Promise<ModifiedReporteeList> => {
@@ -41,4 +41,4 @@ const getModifiedReporteeList = async (
   };
 };
 
-export default getModifiedReporteeList;
+export default alterReporteeList;
