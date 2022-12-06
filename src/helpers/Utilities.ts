@@ -1,11 +1,11 @@
 import MicrosoftUser from "../models/microsoftUser.model";
-import ModifiedReporteeList from "../models/ModifiedReporteeList.model";
+import AlteredReporteeList from "../models/AlteredReporteeList.model";
 import microsoftUsers from "../schema/microsoftUserSchema";
 
 const alterReporteeList = async (
   toUserReporteeIds: string[],
   requestedReportees: MicrosoftUser[]
-): Promise<ModifiedReporteeList> => {
+): Promise<AlteredReporteeList> => {
   const toUserReportees = await microsoftUsers.find({
     userId: { $in: toUserReporteeIds },
   });
