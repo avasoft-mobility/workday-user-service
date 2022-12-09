@@ -764,7 +764,7 @@ const rejectMigrationRequest = async (
   const mailType = "rejected";
   const mailSubject = `Migration Request - [#${migrationId}] - Rejected`;
   const message =
-    "Your request for migration of reportees is rejected, please contact your manager for further details";
+    "Your request for migration of reportees is rejected, please contact your manager for further details.";
   const toMails = [];
   const ccMails = [];
 

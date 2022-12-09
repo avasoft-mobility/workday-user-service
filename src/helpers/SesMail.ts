@@ -201,7 +201,9 @@ ${
 ${
   actualRemovedReportees > 50
     ? `<div>
-  <p>+ ${actualRemovedReportees - 50} items left </p>
+  <p>+ ${
+    actualRemovedReportees - 50
+  } reportee(s) exclusion request has been raised.</p>
   </div>`
     : ``
 }
@@ -235,7 +237,9 @@ ${
 ${
   actualNewlyAddedReportees > 50
     ? `<div>
-  <p>+ ${actualNewlyAddedReportees - 50} items left </p>
+  <p>+ ${
+    actualNewlyAddedReportees - 50
+  } reportee(s) inclusion request has been raised.</p>
   </div>`
     : ``
 }
@@ -269,7 +273,7 @@ ${
 ${
   actualExistingReportees > 50
     ? `<div>
-  <p>+ ${actualExistingReportees - 50} items left </p>
+  <p>+ ${actualExistingReportees - 50} reportee(s) is in your team.</p>
   </div>`
     : ``
 }
