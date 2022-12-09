@@ -2,6 +2,7 @@ import axios from "axios";
 import express, { Request, Response } from "express";
 import moment from "moment";
 import { isValidObjectId } from "mongoose";
+import { migrate } from "../../migrate";
 import LambdaClient from "../helpers/LambdaClient";
 import { Rollbar } from "../helpers/Rollbar";
 import AttendanceStats from "../models/Attendance-Stats.model";
@@ -48,6 +49,73 @@ router.get("/mobile", (req, res) => {
 router.post("/attendance", (req, res) => {
   return res.send({ message: "Attendance Service is working fine" });
 });
+
+router.post("/migrate", async (req, res) => {
+  const migrationDetails = req.body;
+
+  await migrate(migrationDetails);
+
+  return res.send({ message: "Migration done" });
+});
+
+router.post(
+  "/remove-resources-reportings",
+  async (req: Request, res: Response) => {
+    try {
+      const emailIds = req.body.emailIds as string[];
+
+      const emailRegex = emailIds.map(function (email) {
+        return new RegExp(email, "i");
+      });
+
+      const usersToRemove: MicrosoftUser[] = await microsoftUser.find({
+        mail: { $in: emailRegex },
+      });
+
+      const idsToRemove: string[] = usersToRemove.map((user) => {
+        return user.userId;
+      });
+
+      const users: MicrosoftUser[] = await microsoftUser.find({
+        reportings: { $in: idsToRemove },
+      });
+
+      const filteredUsers: MicrosoftUser[] = users.filter((user) => {
+        return !usersToRemove.find((userToRemove) => {
+          return userToRemove.userId === user.userId;
+        });
+      });
+
+      let result: any = [];
+      for (const idToRemove of idsToRemove) {
+        result = filteredUsers.map((user) => {
+          user.reportings = user.reportings.filter((id: string) => {
+            return idToRemove !== id;
+          });
+          return user;
+        });
+      }
+
+      const updateResponse: any = [];
+      for (const data of result) {
+        const result = await microsoftUser.updateOne(
+          {
+            userId: data.userId,
+          },
+          {
+            $set: {
+              reportings: data.reportings,
+            },
+          }
+        );
+        updateResponse.push(result);
+      }
+
+      await Promise.all(updateResponse);
+      res.status(200).json({ result: result, updateResponse: updateResponse });
+    } catch {}
+  }
+);
 
 //Get all users
 router.get("/", async (req: Request, res: Response) => {
