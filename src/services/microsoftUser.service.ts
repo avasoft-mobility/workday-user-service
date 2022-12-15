@@ -25,6 +25,7 @@ interface Response {
 }
 
 const HIGHER_LEVEL_ROLES = JSON.parse(process.env.HIGHER_LEVEL_ROLES!);
+const CEO = "f6bd2701-f60c-4b51-91a0-800e1c70ec42";
 
 const getMyTeamReport = async (userId: string): Promise<Response> => {
   let reportingUsers: TeamReport[] = [];
@@ -299,9 +300,13 @@ const requestReporteesMigration = async (
     return { code: 400, message: "To user is required" };
   }
 
-  const isHigherLevelRoleMatched = HIGHER_LEVEL_ROLES.includes(
-    toUser.role.toLocaleLowerCase()
-  );
+  let isHigherLevelRoleMatched = toUser.managerId === CEO ? true : false;
+  if (!isHigherLevelRoleMatched) {
+    isHigherLevelRoleMatched = HIGHER_LEVEL_ROLES.includes(
+      toUser.role.toLocaleLowerCase()
+    );
+  }
+
   let reportees = await getReporteeDetails(requestedReporteeIds);
 
   const toUserId = toUser.userId as string;
@@ -604,9 +609,12 @@ const acceptMigrationRequest = async (
     return { code: 404, message: "To user not found" };
   }
 
-  const isHigherLevelRoleMatched = HIGHER_LEVEL_ROLES.includes(
-    toUser.role.toLocaleLowerCase()
-  );
+  let isHigherLevelRoleMatched = toUser.managerId === CEO ? true : false;
+  if (!isHigherLevelRoleMatched) {
+    isHigherLevelRoleMatched = HIGHER_LEVEL_ROLES.includes(
+      toUser.role.toLocaleLowerCase()
+    );
+  }
 
   const greetings = `Hi ${toUser.name}`;
   const mailType = "accepted";
@@ -756,9 +764,12 @@ const rejectMigrationRequest = async (
     return { code: 404, message: "To user not found" };
   }
 
-  const isHigherLevelRoleMatched = HIGHER_LEVEL_ROLES.includes(
-    toUser.role.toLocaleLowerCase()
-  );
+  let isHigherLevelRoleMatched = toUser.managerId === CEO ? true : false;
+  if (!isHigherLevelRoleMatched) {
+    isHigherLevelRoleMatched = HIGHER_LEVEL_ROLES.includes(
+      toUser.role.toLocaleLowerCase()
+    );
+  }
 
   const greetings = `Hi ${toUser.name}`;
   const mailType = "rejected";
